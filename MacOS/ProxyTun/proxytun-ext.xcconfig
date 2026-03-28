@@ -9,7 +9,7 @@
 // https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
 
 // MARK: - Team Configuration
-DEVELOPMENT_TEAM = L //edit it
+DEVELOPMENT_TEAM = A5C562L38Z
 
 // MARK: - Extension Signing
 CODE_SIGN_STYLE = Manual

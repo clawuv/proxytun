@@ -97,10 +97,15 @@ struct ProxyTunGUIApp: App {
                 let updateService = UpdateService()
                 let versionInfo = await updateService.checkForUpdates()
                 
-                if versionInfo.isUpdateAvailable {
-                    await MainActor.run {
+                await MainActor.run {
+                    if let error = versionInfo.error {
+                        viewModel.addLog("ERROR", "Update check failed: \(error)")
+                    } else if versionInfo.isUpdateAvailable {
+                        viewModel.addLog("INFO", "Update available: \(versionInfo.latestVersion) (\(versionInfo.releaseName))")
                         AppDelegate.pendingUpdateInfo = versionInfo
                         NSApp.sendAction(#selector(AppDelegate.showUpdateNotification(_:)), to: nil, from: nil)
+                    } else {
+                        viewModel.addLog("INFO", "Update check complete: already on the latest version")
                     }
                 }
             }
@@ -170,15 +175,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func openUpdateCheck() {
-        openWindow(title: "Check for Updates", size: NSSize(width: 450, height: 300)) {
-            UpdateCheckView()
+        openWindow(title: "Check for Updates", size: NSSize(width: 460, height: 430)) {
+            UpdateCheckView(logger: AppDelegate.viewModel?.addLog)
         }
     }
     
     @objc func showUpdateNotification(_ sender: Any?) {
         if let versionInfo = AppDelegate.pendingUpdateInfo {
-            openWindow(title: "Update Available", size: NSSize(width: 450, height: 350)) {
-                UpdateNotificationView(versionInfo: versionInfo)
+            openWindow(title: "Update Available", size: NSSize(width: 460, height: 430)) {
+                UpdateNotificationView(versionInfo: versionInfo, logger: AppDelegate.viewModel?.addLog)
             }
             AppDelegate.pendingUpdateInfo = nil
         }

@@ -6,9 +6,9 @@ struct UpdateNotificationView: View {
     let versionInfo: VersionInfo
     @StateObject private var viewModel: UpdateNotificationViewModel
     
-    init(versionInfo: VersionInfo) {
+    init(versionInfo: VersionInfo, logger: ((String, String) -> Void)? = nil) {
         self.versionInfo = versionInfo
-        _viewModel = StateObject(wrappedValue: UpdateNotificationViewModel(versionInfo: versionInfo))
+        _viewModel = StateObject(wrappedValue: UpdateNotificationViewModel(versionInfo: versionInfo, logger: logger))
     }
     
     var body: some View {
@@ -44,12 +44,39 @@ struct UpdateNotificationView: View {
                         .foregroundColor(.green)
                         .fontWeight(.semibold)
                 }
+
+                if !viewModel.releaseDateText.isEmpty {
+                    HStack {
+                        Text("Published:")
+                            .fontWeight(.medium)
+                        Spacer()
+                        Text(viewModel.releaseDateText)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
             .padding(.horizontal)
             
             Text("A new version of ProxyTun is available!")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
+
+            if !viewModel.releaseNotesPreview.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Release Notes")
+                        .font(.headline)
+
+                    ScrollView {
+                        Text(viewModel.releaseNotesPreview)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(height: 82)
+                }
+                .padding(.horizontal)
+            }
             
             // Download Progress
             if viewModel.isDownloading {
@@ -103,7 +130,7 @@ struct UpdateNotificationView: View {
             }
         }
         .padding()
-        .frame(width: 450, height: 350)
+        .frame(width: 460, height: 430)
     }
 }
 
@@ -114,12 +141,25 @@ class UpdateNotificationViewModel: ObservableObject {
     @Published var downloadProgress: Double = 0
     @Published var isDownloading = false
     @Published var hasError = false
+    @Published var releaseDateText = ""
+    @Published var releaseNotesPreview = ""
     
     private let updateService = UpdateService()
     private let versionInfo: VersionInfo
+    private let logger: ((String, String) -> Void)?
+    private var loggedDownloadMilestones: Set<Int> = []
+    private let displayDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
     
-    init(versionInfo: VersionInfo) {
+    init(versionInfo: VersionInfo, logger: ((String, String) -> Void)? = nil) {
         self.versionInfo = versionInfo
+        self.logger = logger
+        self.releaseDateText = versionInfo.publishedAt.map { displayDateFormatter.string(from: $0) } ?? ""
+        self.releaseNotesPreview = Self.truncatedReleaseNotes(versionInfo.releaseNotes)
     }
     
     func downloadAndInstall() async {
@@ -127,6 +167,7 @@ class UpdateNotificationViewModel: ObservableObject {
               let fileName = versionInfo.fileName else {
             hasError = true
             errorMessage = "Download URL not available"
+            logger?("ERROR", "Update download failed: download URL not available")
             return
         }
         
@@ -135,6 +176,8 @@ class UpdateNotificationViewModel: ObservableObject {
         downloadStatus = "Starting download..."
         hasError = false
         errorMessage = ""
+        loggedDownloadMilestones.removeAll()
+        logger?("INFO", "Starting update download: \(fileName)")
         
         do {
             let installerPath = try await updateService.downloadUpdate(
@@ -143,23 +186,46 @@ class UpdateNotificationViewModel: ObservableObject {
             ) { progress in
                 Task { @MainActor in
                     self.downloadProgress = progress
+                    let percent = Int(progress * 100)
                     self.downloadStatus = String(format: "Downloading... %.0f%%", progress * 100)
+                    self.logDownloadProgressIfNeeded(percent: percent)
                 }
             }
             
             downloadStatus = "Download complete. Starting installer..."
+            logger?("INFO", "Update download complete: \(fileName)")
             try await Task.sleep(nanoseconds: 1_000_000_000)
             
+            logger?("INFO", "Launching installer: \(fileName)")
             updateService.installUpdateAndQuit(installerPath: installerPath)
         } catch {
             hasError = true
             errorMessage = "Error downloading update: \(error.localizedDescription)"
             downloadStatus = "Download failed"
             isDownloading = false
+            logger?("ERROR", "Update download failed: \(error.localizedDescription)")
         }
     }
     
     func dontAskAgain() {
         UserDefaults.standard.set(false, forKey: "checkForUpdatesOnStartup")
+    }
+
+    private func logDownloadProgressIfNeeded(percent: Int) {
+        let milestones = [25, 50, 75, 100]
+        guard let milestone = milestones.first(where: { percent >= $0 && !loggedDownloadMilestones.contains($0) }) else {
+            return
+        }
+
+        loggedDownloadMilestones.insert(milestone)
+        logger?("INFO", "Update download progress: \(milestone)%")
+    }
+
+    private static func truncatedReleaseNotes(_ notes: String) -> String {
+        let normalized = notes.replacingOccurrences(of: "\r\n", with: "\n")
+        if normalized.count <= 360 {
+            return normalized
+        }
+        return String(normalized.prefix(360)) + "\n\n..."
     }
 }

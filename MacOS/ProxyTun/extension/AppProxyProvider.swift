@@ -225,6 +225,17 @@ struct ProxyRule: Codable {
 }
 
 class AppProxyProvider: NETransparentProxyProvider {
+    private var ownExtensionBundleIdentifier: String {
+        Bundle.main.bundleIdentifier ?? "com.proxytun.ProxyTun.extension"
+    }
+
+    private var ownAppBundleIdentifier: String {
+        if ownExtensionBundleIdentifier.hasSuffix(".extension") {
+            return String(ownExtensionBundleIdentifier.dropLast(".extension".count))
+        }
+        return ownExtensionBundleIdentifier
+    }
+
     
     // Circular buffer for log queue - avoids O(n) removeFirst() on array
     private static let logCapacity = 1000
@@ -544,7 +555,7 @@ class AppProxyProvider: NETransparentProxyProvider {
         let processPath = metaData.sourceAppSigningIdentifier
         
         // early exit for own app traffic before any other work
-        if processPath == "com.proxytun.ProxyTun" || processPath == "com.proxytun.ProxyTun.extension" {
+        if processPath == ownAppBundleIdentifier || processPath == ownExtensionBundleIdentifier {
             return false
         }
         
@@ -608,7 +619,7 @@ class AppProxyProvider: NETransparentProxyProvider {
         
         let displayName = processName ?? processPath
         
-        if processPath == "com.proxytun.ProxyTun" || processPath == "com.proxytun.ProxyTun.extension" {
+        if processPath == ownAppBundleIdentifier || processPath == ownExtensionBundleIdentifier {
             return false
         }
         
@@ -1355,5 +1366,4 @@ class AppProxyProvider: NETransparentProxyProvider {
         logQueueLock.unlock()
     }
 }
-
 

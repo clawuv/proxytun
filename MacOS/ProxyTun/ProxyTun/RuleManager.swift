@@ -184,9 +184,19 @@ struct RuleManager {
     }
     
     static func saveRulesToUserDefaults(_ rules: [[String: Any]]) {
+        let existingRules = UserDefaults.standard.array(forKey: "proxyRules") as? [[String: Any]] ?? []
         let rulesToSave = rules.map { rule -> [String: Any] in
             var ruleData = rule
             ruleData.removeValue(forKey: "ruleId")
+            if let existingTitle = existingRules.first(where: { existingRule in
+                (existingRule["processNames"] as? String ?? "") == (ruleData["processNames"] as? String ?? "") &&
+                (existingRule["targetHosts"] as? String ?? "") == (ruleData["targetHosts"] as? String ?? "") &&
+                (existingRule["targetPorts"] as? String ?? "") == (ruleData["targetPorts"] as? String ?? "") &&
+                (existingRule["protocol"] as? String ?? "").uppercased() == (ruleData["protocol"] as? String ?? "").uppercased() &&
+                (existingRule["action"] as? String ?? "").uppercased() == (ruleData["action"] as? String ?? "").uppercased()
+            })?["title"] as? String {
+                ruleData["title"] = existingTitle
+            }
             return ruleData
         }
         UserDefaults.standard.set(rulesToSave, forKey: "proxyRules")

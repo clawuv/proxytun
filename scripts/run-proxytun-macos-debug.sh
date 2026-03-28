@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="/Users/hht/workspace/ProxyBridge"
 PROJECT="$ROOT/MacOS/ProxyTun/ProxyTun.xcodeproj"
-DERIVED_DATA="$ROOT/.build/ProxyTun-macos"
+DERIVED_DATA="$ROOT/MacOS/ProxyTun/RunDerivedData"
 APP_PATH="$DERIVED_DATA/Build/Products/Debug/ProxyTun.app"
 
 echo "Building ProxyTun macOS Debug app..."
@@ -15,6 +15,7 @@ xcodebuild \
   -derivedDataPath "$DERIVED_DATA" \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
+  CODE_SIGN_IDENTITY='' \
   build
 
 echo "Stopping existing ProxyTun process if needed..."

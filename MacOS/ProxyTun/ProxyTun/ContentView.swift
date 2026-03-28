@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var settingsMessageDismissWorkItem: DispatchWorkItem?
     @State private var preferencesMessageDismissWorkItem: DispatchWorkItem?
     @State private var showAddRule = false
+    @State private var editingRule: ProxyRule?
     @StateObject private var settingsFormModel = ProxySettingsFormModel()
 
     var body: some View {
@@ -30,6 +31,11 @@ struct ContentView: View {
         .sheet(isPresented: $showAddRule) {
             RuleEditorView(viewModel: viewModel) {
                 showRulesMessage(localized("Rule saved successfully.", "规则保存成功。"), isError: false)
+            }
+        }
+        .sheet(item: $editingRule) { rule in
+            RuleEditorView(viewModel: viewModel, existingRule: rule) {
+                showRulesMessage(localized("Rule updated successfully.", "规则更新成功。"), isError: false)
             }
         }
     }
@@ -65,21 +71,95 @@ struct ContentView: View {
 
             Spacer()
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(proxyStatusTitle)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(AppColors.textPrimary)
-
-                Text(proxyStatusDetail)
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppColors.textSecondary)
-            }
-            .padding(.top, 8)
+            sidebarFooterCard
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 22)
-        .frame(width: 220)
+        .frame(width: 228)
         .background(AppColors.sidebar)
+    }
+
+    private var sidebarFooterCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    AppColors.primary.opacity(0.18),
+                                    AppColors.primaryTint
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 26, weight: .medium))
+                        .foregroundStyle(AppColors.primary)
+                }
+                .frame(width: 54, height: 54)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(proxyStatusTitle)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppColors.textPrimary)
+
+                    Text(proxyStatusDetail)
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppColors.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Button {
+                NSApp.sendAction(#selector(AppDelegate.openUpdateCheck), to: nil, from: nil)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(localized("Check Updates", "检查更新"))
+                        .font(.system(size: 12.5, weight: .semibold))
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(AppColors.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 11)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white.opacity(0.96))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(AppColors.border, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.9),
+                            AppColors.card.opacity(0.88)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(AppColors.border, lineWidth: 1)
+        )
     }
 
     private func sidebarRow(for section: SidebarSection) -> some View {
@@ -159,13 +239,13 @@ struct ContentView: View {
                     stepCard(step: localized("Step 2", "第二步"), title: localized("Add Rules", "添加规则"), buttonTitle: localized("Go to Rules", "去规则"), icon: "shield.plus", tint: AppColors.card) {
                         selectedSection = .rules
                     }
-                    stepCard(step: localized("Step 3", "第三步"), title: localized("Start Routing", "开始运行"), buttonTitle: localized("View Connections", "看连接"), icon: "waveform.path.ecg", tint: AppColors.card) {
+                    stepCard(step: localized("Step 3", "第三步"), title: localized("Start Routing", "开始运行"), buttonTitle: localized("Go to Routing", "去运行"), icon: "waveform.path.ecg", tint: AppColors.card) {
                         selectedSection = .connections
                     }
                 }
 
                 HStack(alignment: .top, spacing: 22) {
-                    activityLogPanel(title: localized("Activity Log", "活动日志"), subtitle: localized("Recent rule hits, proxy changes, and connection updates.", "最近规则命中、代理切换和连接变化。"))
+                    activityLogPanel(title: localized("Activity Log", "活动日志"), subtitle: localized("proxy changes", "代理切换和连接变化。"))
                     overviewSummaryColumn
                 }
             }
@@ -179,21 +259,11 @@ struct ContentView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 dashboardHeader(
-                    title: localized("Connections", "连接"),
-                    subtitle: localized("Inspect live flows, trace destinations, and verify which rules are deciding traffic.", "查看实时连接、跟踪目标地址，并确认当前命中的规则。")
+                    title: localized("Logs", "日志"),
+                    subtitle: localized("Inspect live routing events and search recent traffic history.", "查看实时路由事件并搜索最近的流量记录。")
                 )
 
-                statusBanner(
-                    title: localized("\(viewModel.connections.count) active sockets", "\(viewModel.connections.count) 个活跃连接"),
-                    detail: viewModel.connections.isEmpty
-                        ? localized("No active connections yet. Start the tunnel to inspect traffic.", "当前还没有活跃连接。启动隧道后即可查看流量。")
-                        : localized("Connection activity updates in real time while the tunnel is running.", "隧道运行时，连接活动会实时更新。")
-                )
-
-                HStack(alignment: .top, spacing: 22) {
-                    connectionTableCard
-                    connectionsSummaryColumn
-                }
+                connectionTableCard
             }
             .padding(.horizontal, 28)
             .padding(.vertical, 24)
@@ -206,15 +276,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 dashboardHeader(
                     title: localized("Rules Studio", "规则"),
-                    subtitle: localized("Manage app routing policies, quick presets, and rule order without leaving the main window.", "在主窗口内管理应用分流策略、常用预设和规则。"),
-                    primaryActionTitle: localized("Add Rule", "添加规则"),
-                    primaryAction: {
-                        showAddRule = true
-                    },
-                    secondaryActionTitle: localized("Import", "导入"),
-                    secondaryAction: {
-                        importRulesFromFile()
-                    }
+                    subtitle: localized("Manage app routing policies, quick presets, and rule order without leaving the main window.", "在主窗口内管理应用分流策略、常用预设和规则。")
                 )
 
                 if let rulesActionMessage {
@@ -260,11 +322,6 @@ struct ContentView: View {
                     subtitle: localized("Adjust application behavior, background defaults, and runtime preferences for ProxyTun.", "调整应用行为、默认选项和 ProxyTun 的运行偏好。")
                 )
 
-                statusBanner(
-                    title: settingsStatusTitle,
-                    detail: settingsStatusDetail
-                )
-
                 if let preferencesMessage {
                     inlineFeedbackBanner(message: preferencesMessage, isError: false)
                 }
@@ -303,8 +360,8 @@ struct ContentView: View {
                     Button(secondaryActionTitle, action: secondaryAction)
                         .buttonStyle(SecondaryPillButtonStyle())
                 } else {
-                    Button(localized("Edit Rules", "编辑规则")) {
-                        openProxyRulesWindow()
+                    Button(localized("Homepage", "访问主页")) {
+                        openProjectHomepage()
                     }
                     .buttonStyle(SecondaryPillButtonStyle())
                 }
@@ -416,15 +473,19 @@ struct ContentView: View {
                 )
             }
 
-            VStack(spacing: 0) {
-                ForEach(filteredDashboardLogs) { entry in
-                    dashboardLogRow(entry)
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(filteredDashboardLogs) { entry in
+                        dashboardLogRow(entry)
 
-                    if entry.id != filteredDashboardLogs.last?.id {
-                        Divider()
+                        if entry.id != filteredDashboardLogs.last?.id {
+                            Divider()
+                        }
                     }
                 }
             }
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, minHeight: 280, maxHeight: 280, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color.white)
@@ -438,16 +499,17 @@ struct ContentView: View {
     }
 
     private func dashboardLogRow(_ entry: DashboardLogEntry) -> some View {
-        HStack(spacing: 12) {
-            Text(entry.message)
-                .font(.system(size: 12.5, weight: .medium, design: .monospaced))
-                .foregroundStyle(AppColors.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        let timestampText = Text("[\(entry.timestamp)] ").foregroundColor(Color(nsColor: .systemGray))
+        let protocolText = Text("[\(entry.badge)] ").foregroundColor(.blue)
+        let processText = Text(entry.process).foregroundColor(.green)
 
-            Text(entry.badge)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(entry.badgeColor)
-        }
+        return (
+            timestampText
+            + protocolText
+            + processText
+        )
+        .font(.system(size: 12.5, weight: .medium, design: .monospaced))
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
     }
@@ -470,47 +532,58 @@ struct ContentView: View {
 
     private var connectionTableCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(localized("Live Connections", "实时连接"))
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(AppColors.textPrimary)
-                Text(localized("Recent application connections and routing decisions.", "最近的应用连接和路由决策。"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(AppColors.textSecondary)
-            }
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .bottom, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(localized("Connection Logs", "连接日志"))
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(AppColors.textPrimary)
+                        Text(localized("Live application traffic, destinations, and route decisions.", "实时应用流量、目标地址和路由决策。"))
+                            .font(.system(size: 13))
+                            .foregroundStyle(AppColors.textSecondary)
+                    }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(localized("Filters", "筛选"))
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppColors.textPrimary)
+                    Spacer()
 
-                HStack(spacing: 12) {
-                    filterField(title: localized("Search", "搜索"), value: localized("process, host, or pid...", "进程、主机或 pid..."), grows: true)
-                    filterField(title: localized("Action", "动作"), value: localized("All actions", "全部动作"))
-                    filterField(title: localized("Protocol", "协议"), value: "TCP + UDP")
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(AppColors.textSecondary)
+                        TextField(localized("Search logs: app, host, protocol...", "搜索日志：应用、地址、协议..."), text: $logSearchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 999, style: .continuous)
+                            .fill(AppColors.card)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 999, style: .continuous)
+                            .stroke(AppColors.border, lineWidth: 1)
+                    )
+                    .frame(width: 360)
                 }
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppColors.border, lineWidth: 1)
-            )
+                .padding(.horizontal, 18)
+                .padding(.top, 16)
+                .padding(.bottom, 14)
 
-            VStack(spacing: 0) {
-                ForEach(viewModel.connections.prefix(6)) { connection in
-                    connectionRow(connection)
+                Divider()
 
-                    if connection.id != viewModel.connections.prefix(6).last?.id {
-                        Divider()
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(filteredLogEntries) { entry in
+                            dashboardLogRow(entry)
+
+                            if entry.id != filteredLogEntries.last?.id {
+                                Divider()
+                            }
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, minHeight: 360, maxHeight: 360, alignment: .topLeading)
             }
-            .frame(maxWidth: .infinity, minHeight: 280, alignment: .topLeading)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color.white)
@@ -521,6 +594,76 @@ struct ContentView: View {
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var filteredLogEntries: [DashboardLogEntry] {
+        let entries = buildDashboardLogs(limit: nil)
+
+        guard !logSearchText.isEmpty else { return entries }
+
+        return entries.filter {
+            $0.searchText.localizedCaseInsensitiveContains(logSearchText)
+        }
+    }
+
+    private var filteredDashboardLogs: [DashboardLogEntry] {
+        let entries = buildDashboardLogs(limit: 80)
+
+        guard !logSearchText.isEmpty else { return entries }
+
+        return entries.filter {
+            $0.searchText.localizedCaseInsensitiveContains(logSearchText)
+        }
+    }
+
+    private func buildDashboardLogs(limit: Int?) -> [DashboardLogEntry] {
+        let connectionEntries = viewModel.connections.map { connection in
+            DashboardLogEntry(
+                id: "connection-\(connection.id)",
+                timestamp: connection.timestamp,
+                badge: connection.connectionProtocol,
+                process: connection.process,
+                destination: "\(connection.destination):\(connection.port)",
+                route: connection.proxy
+            )
+        }
+
+        let activityEntries = viewModel.activityLogs.map { log in
+            DashboardLogEntry(
+                id: "activity-\(log.id)",
+                timestamp: log.timestamp,
+                badge: log.level,
+                process: log.message,
+                destination: localized("system", "系统"),
+                route: localized("Activity", "活动")
+            )
+        }
+
+        let mergedEntries = (connectionEntries + activityEntries)
+            .sorted { $0.timestamp > $1.timestamp }
+
+        if !mergedEntries.isEmpty {
+            return limit.map { Array(mergedEntries.prefix($0)) } ?? mergedEntries
+        }
+
+        return [
+            DashboardLogEntry(
+                id: "placeholder-1",
+                timestamp: "--:--:--",
+                badge: "TCP",
+                process: localized("Waiting for traffic", "等待流量"),
+                destination: "unknown:unknown",
+                route: localized("Direct", "直连")
+            ),
+            DashboardLogEntry(
+                id: "placeholder-2",
+                timestamp: "--:--:--",
+                badge: "UDP",
+                process: localized("Start routing to observe live flows", "启动路由后查看实时连接"),
+                destination: "unknown:unknown",
+                route: localized("Direct", "直连")
+            )
+        ]
     }
 
     private func filterField(title: String, value: String, grows: Bool = false) -> some View {
@@ -563,37 +706,42 @@ struct ContentView: View {
         .padding(.vertical, 12)
     }
 
-    private var connectionsSummaryColumn: some View {
-        VStack(spacing: 16) {
-            summaryCard(
-                title: localized("Selected Flow", "选中连接"),
-                subtitle: selectedConnectionTitle,
-                lines: selectedConnectionLines
-            )
-
-            warningCard(
-                title: localized("Blocked Steam flow requires review", "Steam 拦截连接需要确认"),
-                detail: localized("A denylist match is preventing content.steampowered.com from leaving the tunnel. Confirm whether this is expected.", "某条拦截规则阻止了 content.steampowered.com 离开隧道，请确认这是否符合预期。")
-            )
-        }
-        .frame(width: 290)
-    }
-
     private var rulesListCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let presetColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+
+        return VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(localized("Common Presets", "常用预设"))
+                Text(localized("Common Presets", "规则列表"))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppColors.textPrimary)
 
-                HStack(spacing: 12) {
-                    ForEach(RulePreset.defaults) { preset in
-                        RulePresetCard(preset: preset) {
-                            applyPreset(preset)
-                        }
+                LazyVGrid(columns: presetColumns, alignment: .leading, spacing: 12) {
+                    ForEach(RulePresetManager.availablePresets()) { preset in
+                        let isApplied = RulePresetManager.isPresetEnabled(for: preset)
+                        let hasStoredRule = RulePresetManager.hasDuplicateRule(for: preset)
+                        RulePresetCard(
+                            preset: preset,
+                            toggleTitle: isApplied ? localized("Disable", "关闭") : localized("Enable", "开启"),
+                            editTitle: localized("Edit", "编辑"),
+                            deleteTitle: localized("Delete", "删除"),
+                            isApplied: isApplied,
+                            canToggle: !viewModel.isProxyActive,
+                            canDelete: hasStoredRule && !isApplied,
+                            onToggle: { applyPreset(preset) },
+                            onEdit: { editPreset(preset) },
+                            onDelete: { deletePreset(preset) }
+                        )
+                    }
+
+                    AddRuleCard(
+                        title: localized("Add Rule", "添加规则"),
+                        detail: localized("Create a custom application routing policy and save it into your local presets.", "创建一条自定义应用分流规则，并保存到本地预设中。")
+                    ) {
+                        showAddRule = true
                     }
                 }
             }
+
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
             .background(
@@ -611,13 +759,10 @@ struct ContentView: View {
     private var proxiesEditorCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(localized("Proxy Endpoint", "代理端点"))
-                        .font(.system(size: 18, weight: .semibold))
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(localized("Basic Configuration", "基础配置"))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(AppColors.textPrimary)
-                    Text(localized("Create or edit the SOCKS5 / HTTP endpoint used for traffic routing.", "创建或编辑用于流量转发的 SOCKS5 / HTTP 代理端点。"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppColors.textSecondary)
                 }
 
                 Spacer()
@@ -640,17 +785,11 @@ struct ContentView: View {
             )
 
             HStack(spacing: 10) {
-                Button(localized("Reload", "重新加载")) {
-                    settingsFormModel.load(from: viewModel.proxyConfig)
-                    settingsSaveMessage = nil
-                }
-                .buttonStyle(SecondaryPillButtonStyle())
-
                 Button(localized("Save Proxy", "保存代理")) {
                     saveInlineSettings()
                 }
                 .buttonStyle(PrimaryPillButtonStyle())
-                .disabled(settingsFormModel.isSaveDisabled)
+                .disabled(settingsFormModel.isSaveDisabled || viewModel.isProxyActive)
             }
         }
         .padding(.horizontal, 20)
@@ -731,18 +870,6 @@ struct ContentView: View {
                 settingsInfoRow(title: localized("Configured Endpoint", "当前端点"), value: proxyStatusDetail)
                 settingsInfoRow(title: localized("Last Activity", "最近活动"), value: lastActivityTimestamp)
             }
-
-            HStack(spacing: 10) {
-                Button(localized("Check for Updates", "检查更新")) {
-                    NSApp.sendAction(#selector(AppDelegate.openUpdateCheck), to: nil, from: nil)
-                }
-                .buttonStyle(SecondaryPillButtonStyle())
-
-                Button(localized("Open Proxy Window", "打开代理窗口")) {
-                    openProxySettingsWindow()
-                }
-                .buttonStyle(PrimaryPillButtonStyle())
-            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 18)
@@ -793,22 +920,35 @@ struct ContentView: View {
 
             Spacer()
 
-            Picker("", selection: $preferredLanguage) {
-                Text("English").tag(AppLanguage.english.rawValue)
-                Text("简体中文").tag(AppLanguage.chinese.rawValue)
+            HStack(spacing: 8) {
+                languageOptionButton(title: "English", value: AppLanguage.english.rawValue)
+                languageOptionButton(title: "简体中文", value: AppLanguage.chinese.rawValue)
             }
-            .pickerStyle(.segmented)
-            .frame(width: 180)
-            .onChange(of: preferredLanguage) { newValue in
-                showPreferencesMessage(
-                    newValue == AppLanguage.chinese.rawValue
-                        ? "界面语言已切换为简体中文。"
-                        : "Interface language switched to English."
-                )
-            }
+            .padding(6)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(AppColors.card)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(AppColors.border, lineWidth: 1)
+            )
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
+    }
+
+    private func languageOptionButton(title: String, value: String) -> some View {
+        Button(title) {
+            guard preferredLanguage != value else { return }
+            preferredLanguage = value
+            showPreferencesMessage(
+                value == AppLanguage.chinese.rawValue
+                    ? "界面语言已切换为简体中文。"
+                    : "Interface language switched to English."
+            )
+        }
+        .buttonStyle(LanguageOptionButtonStyle(isSelected: preferredLanguage == value))
     }
 
     private func settingsInfoRow(title: String, value: String) -> some View {
@@ -933,8 +1073,70 @@ struct ContentView: View {
     }
 
     private func applyPreset(_ preset: RulePreset) {
-        RulePresetManager.applyPreset(preset, viewModel: viewModel) { result in
-            showRulesMessage(result.message, isError: result.isError)
+        if RulePresetManager.isPresetEnabled(for: preset) {
+            RulePresetManager.disablePreset(preset, viewModel: viewModel) { result in
+                let message: String
+                switch result {
+                case .disabledLocally(let title):
+                    message = localized("\(title) disabled locally.", "\(title) 已关闭并保留在本地规则中。")
+                case .disabledAndSynced(let title):
+                    message = localized("\(title) disabled and synced to the active tunnel.", "\(title) 已关闭，并同步到当前隧道。")
+                case .syncFailed(let detail):
+                    message = detail
+                default:
+                    message = result.message
+                }
+                showRulesMessage(message, isError: result.isError)
+            }
+        } else {
+            RulePresetManager.applyPreset(preset, viewModel: viewModel) { result in
+                let message: String
+                switch result {
+                case .savedLocally(let title):
+                    message = localized("\(title) saved locally. Start the tunnel to load it into the extension.", "\(title) 已开启并保存到本地，启动隧道后会加载到扩展。")
+                case .savedAndSynced(let title):
+                    message = localized("\(title) added and synced to the active tunnel.", "\(title) 已开启，并同步到当前隧道。")
+                case .duplicate(let title):
+                    message = localized("\(title) is already saved in your rules.", "\(title) 已存在于规则配置中。")
+                case .syncFailed(let detail):
+                    message = detail
+                default:
+                    message = result.message
+                }
+                showRulesMessage(message, isError: result.isError)
+            }
+        }
+    }
+
+    private func editPreset(_ preset: RulePreset) {
+        editingRule = ProxyRule(
+            id: 0,
+            title: preset.title,
+            processNames: preset.processNames,
+            targetHosts: preset.targetHosts,
+            targetPorts: preset.targetPorts,
+            ruleProtocol: preset.protocolName,
+            action: preset.action,
+            enabled: true
+        )
+    }
+
+    private func deletePreset(_ preset: RulePreset) {
+        guard RulePresetManager.hasDuplicateRule(for: preset) else { return }
+
+        RulePresetManager.removePreset(preset, viewModel: viewModel) { result in
+            let message: String
+            switch result {
+            case .removedLocally(let title):
+                message = localized("\(title) removed from local rules.", "\(title) 已从本地规则中移除。")
+            case .removedAndSynced(let title):
+                message = localized("\(title) removed and synced to the active tunnel.", "\(title) 已删除，并同步到当前隧道。")
+            case .syncFailed(let detail):
+                message = detail
+            default:
+                message = result.message
+            }
+            showRulesMessage(message, isError: result.isError)
         }
     }
 
@@ -997,6 +1199,11 @@ struct ContentView: View {
         NSApp.sendAction(#selector(AppDelegate.openProxyRules), to: nil, from: nil)
     }
 
+    private func openProjectHomepage() {
+        guard let url = URL(string: "https://github.com/ProxyTun/ProxyTun") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     private func saveInlineSettings() {
         let result = settingsFormModel.save(to: viewModel)
         showSettingsMessage(result.message, isError: result.isError)
@@ -1047,47 +1254,6 @@ struct ContentView: View {
         }
 
         return "\(config.host):\(config.port)"
-    }
-
-    private var filteredDashboardLogs: [DashboardLogEntry] {
-        let entries = buildDashboardLogs()
-
-        guard !logSearchText.isEmpty else { return entries }
-
-        return entries.filter {
-            $0.message.localizedCaseInsensitiveContains(logSearchText) ||
-            $0.badge.localizedCaseInsensitiveContains(logSearchText)
-        }
-    }
-
-    private func buildDashboardLogs() -> [DashboardLogEntry] {
-        if !viewModel.connections.isEmpty {
-            return viewModel.connections.prefix(6).map { connection in
-                DashboardLogEntry(
-                    id: connection.id,
-                    message: "[\(connection.timestamp)] [\(connection.connectionProtocol)] \(connection.process) -> \(connection.destination):\(connection.port) -> \(connection.proxy)",
-                    badge: connection.connectionProtocol,
-                    badgeColor: .blue
-                )
-            }
-        }
-
-        if !viewModel.activityLogs.isEmpty {
-            return viewModel.activityLogs.prefix(6).map { log in
-                DashboardLogEntry(
-                    id: log.id,
-                    message: "[\(log.timestamp)] [\(log.level)] \(log.message)",
-                    badge: log.level,
-                    badgeColor: log.level == "ERROR" ? .red : AppColors.textSecondary
-                )
-            }
-        }
-
-        return [
-            DashboardLogEntry(id: -1, message: "[--:--:--] [INFO] Configure a proxy profile to start collecting events.", badge: "INFO", badgeColor: AppColors.textSecondary),
-            DashboardLogEntry(id: -2, message: "[--:--:--] [RULE] Add your first process rule to guide traffic routing.", badge: "RULE", badgeColor: AppColors.primary),
-            DashboardLogEntry(id: -3, message: "[--:--:--] [CHECK] Start the tunnel to observe live connection activity.", badge: "CHECK", badgeColor: AppColors.textSecondary)
-        ]
     }
 
     private var selectedConnectionTitle: String {
@@ -1160,7 +1326,7 @@ struct ContentView: View {
         case .overview:
             return localized("Overview", "概览")
         case .connections:
-            return localized("Connections", "连接")
+            return localized("Logs", "日志")
         case .rules:
             return localized("Rules", "规则")
         case .proxies:
@@ -1180,10 +1346,17 @@ struct ContentView: View {
 }
 
 private struct DashboardLogEntry: Identifiable {
-    let id: Int
-    let message: String
+    let id: String
+    let timestamp: String
     let badge: String
-    let badgeColor: Color
+    let process: String
+    let destination: String
+    let route: String
+    let isPlaceholder: Bool = false
+
+    var searchText: String {
+        "\(timestamp) \(badge) \(process) \(destination) \(route)"
+    }
 }
 
 private struct PersistedRule: Identifiable {
@@ -1251,7 +1424,7 @@ private enum SidebarSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .overview: return "Overview"
-        case .connections: return "Connections"
+        case .connections: return "Logs"
         case .rules: return "Rules"
         case .proxies: return "Proxies"
         case .settings: return "Settings"
@@ -1293,15 +1466,34 @@ struct PrimaryPillButtonStyle: ButtonStyle {
     var compact = false
 
     func makeBody(configuration: Configuration) -> some View {
+        PrimaryPillButtonBody(configuration: configuration, compact: compact)
+    }
+}
+
+private struct PrimaryPillButtonBody: View {
+    let configuration: ButtonStyle.Configuration
+    let compact: Bool
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
         configuration.label
             .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(isEnabled ? Color.white : AppColors.textMuted)
             .padding(.horizontal, compact ? 16 : 18)
             .padding(.vertical, compact ? 10 : 12)
             .background(
                 RoundedRectangle(cornerRadius: 999, style: .continuous)
-                    .fill(AppColors.primary.opacity(configuration.isPressed ? 0.85 : 1))
+                    .fill(
+                        isEnabled
+                            ? AppColors.primary.opacity(configuration.isPressed ? 0.85 : 1)
+                            : Color(nsColor: NSColor(calibratedWhite: 0.92, alpha: 1))
+                    )
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 999, style: .continuous)
+                    .stroke(isEnabled ? Color.clear : AppColors.border, lineWidth: 1)
+            )
+            .opacity(configuration.isPressed ? 0.96 : 1)
     }
 }
 
@@ -1321,5 +1513,29 @@ struct SecondaryPillButtonStyle: ButtonStyle {
                     .stroke(AppColors.border, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.8 : 1)
+    }
+}
+
+struct LanguageOptionButtonStyle: ButtonStyle {
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(isSelected ? Color(nsColor: NSColor(calibratedWhite: 0.96, alpha: 1)) : AppColors.textPrimary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        isSelected
+                            ? Color(nsColor: NSColor(calibratedWhite: configuration.isPressed ? 0.22 : 0.18, alpha: 1))
+                            : Color.white.opacity(configuration.isPressed ? 0.7 : 1)
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isSelected ? Color(nsColor: NSColor(calibratedWhite: 0.24, alpha: 1)) : AppColors.border, lineWidth: 1)
+            )
     }
 }

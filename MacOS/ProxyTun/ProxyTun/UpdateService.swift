@@ -6,6 +6,7 @@ struct GitHubRelease: Codable {
     let name: String
     let prerelease: Bool
     let publishedAt: String
+    let body: String?
     let assets: [GitHubAsset]
 
     enum CodingKeys: String, CodingKey {
@@ -13,6 +14,7 @@ struct GitHubRelease: Codable {
         case name
         case prerelease
         case publishedAt = "published_at"
+        case body
         case assets
     }
 }
@@ -33,13 +35,22 @@ struct VersionInfo {
     let currentVersion: String
     let latestVersion: String
     let isUpdateAvailable: Bool
+    let releaseName: String
+    let publishedAt: Date?
+    let releaseNotes: String
     let downloadUrl: String?
     let fileName: String?
+    let downloadSize: Int64?
     let error: String?
 }
 
 class UpdateService {
     private let githubApiUrl = "https://api.github.com/repos/ProxyTun/ProxyTun/releases/latest"
+    private let releaseDateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
 
     func checkForUpdates() async -> VersionInfo {
         do {
@@ -49,12 +60,25 @@ class UpdateService {
 
             var request = URLRequest(url: url)
             request.setValue("ProxyTun-UpdateChecker", forHTTPHeaderField: "User-Agent")
+            request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return errorVersion("GitHub returned a non-HTTP response")
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                let responseSummary = summarizeResponseBody(data)
+                return errorVersion(
+                    "GitHub returned HTTP \(httpResponse.statusCode)" +
+                    (responseSummary.isEmpty ? "" : ": \(responseSummary)")
+                )
+            }
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
 
             let currentVersion = getCurrentVersion()
             let latestVersion = parseVersion(release.tagName)
+            let releaseDate = parseReleaseDate(release.publishedAt)
 
             // Find the PKG installer in assets
             let pkgAsset = release.assets.first { asset in
@@ -70,8 +94,12 @@ class UpdateService {
                 currentVersion: currentVersion,
                 latestVersion: release.tagName,
                 isUpdateAvailable: isUpdateAvailable,
+                releaseName: release.name,
+                publishedAt: releaseDate,
+                releaseNotes: normalizeReleaseNotes(release.body),
                 downloadUrl: pkgAsset?.browserDownloadUrl,
                 fileName: pkgAsset?.name,
+                downloadSize: pkgAsset?.size,
                 error: nil
             )
         } catch {
@@ -97,13 +125,14 @@ class UpdateService {
 
         // Remove existing file if any
         try? FileManager.default.removeItem(at: fileURL)
+        FileManager.default.createFile(atPath: fileURL.path, contents: nil)
+        let fileHandle = try FileHandle(forWritingTo: fileURL)
+        defer { try? fileHandle.close() }
 
         var downloadedBytes: Int64 = 0
-        let data = NSMutableData()
 
         for try await byte in asyncBytes {
-            var byteValue = byte
-            data.append(&byteValue, length: 1)
+            try fileHandle.write(contentsOf: Data([byte]))
             downloadedBytes += 1
 
             if totalBytes > 0 {
@@ -114,7 +143,6 @@ class UpdateService {
             }
         }
 
-        try data.write(to: fileURL)
         return fileURL
     }
 
@@ -139,6 +167,16 @@ class UpdateService {
         return tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
     }
 
+    private func parseReleaseDate(_ value: String) -> Date? {
+        if let parsedWithFractionalSeconds = releaseDateFormatter.date(from: value) {
+            return parsedWithFractionalSeconds
+        }
+
+        let fallbackFormatter = ISO8601DateFormatter()
+        fallbackFormatter.formatOptions = [.withInternetDateTime]
+        return fallbackFormatter.date(from: value)
+    }
+
     private func isNewerVersion(_ latest: String, _ current: String) -> Bool {
         let latestComponents = latest.split(separator: ".").compactMap { Int($0) }
         let currentVersionString = current.hasPrefix("v") ? String(current.dropFirst()) : current
@@ -155,13 +193,36 @@ class UpdateService {
         return latestComponents.count > currentComponents.count
     }
 
+    private func normalizeReleaseNotes(_ value: String?) -> String {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "No release notes provided." : trimmed
+    }
+
+    private func summarizeResponseBody(_ data: Data) -> String {
+        guard let body = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !body.isEmpty else {
+            return ""
+        }
+
+        let flattened = body.replacingOccurrences(of: "\n", with: " ")
+        if flattened.count <= 160 {
+            return flattened
+        }
+        return String(flattened.prefix(160)) + "..."
+    }
+
     private func errorVersion(_ message: String) -> VersionInfo {
         return VersionInfo(
             currentVersion: getCurrentVersion(),
             latestVersion: "Error",
             isUpdateAvailable: false,
+            releaseName: "Unavailable",
+            publishedAt: nil,
+            releaseNotes: "No release notes available.",
             downloadUrl: nil,
             fileName: nil,
+            downloadSize: nil,
             error: message
         )
     }

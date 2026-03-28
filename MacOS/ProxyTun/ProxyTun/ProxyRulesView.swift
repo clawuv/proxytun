@@ -5,6 +5,7 @@ import AppKit
 
 struct ProxyRule: Identifiable, Codable {
     let id: UInt32
+    let title: String
     let processNames: String
     let targetHosts: String
     let targetPorts: String
@@ -13,6 +14,7 @@ struct ProxyRule: Identifiable, Codable {
     var enabled: Bool
     
     enum CodingKeys: String, CodingKey {
+        case title
         case processNames
         case targetHosts
         case targetPorts
@@ -24,6 +26,7 @@ struct ProxyRule: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = 0
+        self.title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
         self.processNames = try container.decode(String.self, forKey: .processNames)
         self.targetHosts = try container.decode(String.self, forKey: .targetHosts)
         self.targetPorts = try container.decode(String.self, forKey: .targetPorts)
@@ -34,6 +37,7 @@ struct ProxyRule: Identifiable, Codable {
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(title, forKey: .title)
         try container.encode(processNames, forKey: .processNames)
         try container.encode(targetHosts, forKey: .targetHosts)
         try container.encode(targetPorts, forKey: .targetPorts)
@@ -42,8 +46,9 @@ struct ProxyRule: Identifiable, Codable {
         try container.encode(enabled, forKey: .enabled)
     }
     
-    init(id: UInt32, processNames: String, targetHosts: String, targetPorts: String, ruleProtocol: String, action: String, enabled: Bool) {
+    init(id: UInt32, title: String, processNames: String, targetHosts: String, targetPorts: String, ruleProtocol: String, action: String, enabled: Bool) {
         self.id = id
+        self.title = title
         self.processNames = processNames
         self.targetHosts = targetHosts
         self.targetPorts = targetPorts
@@ -270,15 +275,35 @@ struct ProxyRulesView: View {
     }
 
     private var presetsStrip: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let presetColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Common Presets")
                 .font(.headline)
 
-            HStack(spacing: 12) {
-                ForEach(RulePreset.defaults) { preset in
-                    RulePresetCard(preset: preset) {
-                        applyPreset(preset)
-                    }
+            LazyVGrid(columns: presetColumns, alignment: .leading, spacing: 12) {
+                ForEach(RulePresetManager.availablePresets()) { preset in
+                    let isApplied = RulePresetManager.isPresetEnabled(for: preset)
+                    let hasStoredRule = RulePresetManager.hasDuplicateRule(for: preset)
+                    RulePresetCard(
+                        preset: preset,
+                        toggleTitle: isApplied ? "Disable" : "Enable",
+                        editTitle: "Edit",
+                        deleteTitle: "Delete",
+                        isApplied: isApplied,
+                        canToggle: !viewModel.isProxyActive,
+                        canDelete: hasStoredRule && !isApplied,
+                        onToggle: { togglePreset(preset) },
+                        onEdit: { editPreset(preset) },
+                        onDelete: { deletePreset(preset) }
+                    )
+                }
+
+                AddRuleCard(
+                    title: "Add Rule",
+                    detail: "Create a custom routing policy and save it into your local presets."
+                ) {
+                    showAddRule = true
                 }
             }
         }
@@ -325,7 +350,21 @@ struct ProxyRulesView: View {
     }
     
     private func loadRules() {
-        guard let session = viewModel.tunnelSession else { return }
+        guard let session = viewModel.tunnelSession else {
+            rules = RulePresetManager.storedRules().enumerated().map { index, rule in
+                ProxyRule(
+                    id: UInt32(index + 1),
+                    title: rule["title"] as? String ?? "",
+                    processNames: rule["processNames"] as? String ?? "",
+                    targetHosts: rule["targetHosts"] as? String ?? "",
+                    targetPorts: rule["targetPorts"] as? String ?? "",
+                    ruleProtocol: rule["protocol"] as? String ?? "BOTH",
+                    action: rule["action"] as? String ?? "DIRECT",
+                    enabled: rule["enabled"] as? Bool ?? true
+                )
+            }
+            return
+        }
         
         isLoading = true
         RuleManager.listRules(session: session) { [self] success, rulesList in
@@ -342,6 +381,7 @@ struct ProxyRulesView: View {
     private func mapToProxyRule(_ dict: [String: Any]) -> ProxyRule {
         ProxyRule(
             id: dict["ruleId"] as? UInt32 ?? 0,
+            title: dict["title"] as? String ?? "",
             processNames: dict["processNames"] as? String ?? "",
             targetHosts: dict["targetHosts"] as? String ?? "",
             targetPorts: dict["targetPorts"] as? String ?? "",
@@ -396,10 +436,48 @@ struct ProxyRulesView: View {
         }
     }
 
-    private func applyPreset(_ preset: RulePreset) {
-        RulePresetManager.applyPreset(preset, viewModel: viewModel) { result in
+    private func editPreset(_ preset: RulePreset) {
+        editingRule = ProxyRule(
+            id: 0,
+            title: preset.title,
+            processNames: preset.processNames,
+            targetHosts: preset.targetHosts,
+            targetPorts: preset.targetPorts,
+            ruleProtocol: preset.protocolName,
+            action: preset.action,
+            enabled: true
+        )
+    }
+
+    private func togglePreset(_ preset: RulePreset) {
+        if RulePresetManager.isPresetEnabled(for: preset) {
+            RulePresetManager.disablePreset(preset, viewModel: viewModel) { result in
+                presetMessageIsError = result.isError
+                presetMessage = result.message
+                loadRules()
+            }
+        } else {
+            RulePresetManager.applyPreset(preset, viewModel: viewModel) { result in
+                presetMessageIsError = result.isError
+                presetMessage = result.message
+                loadRules()
+            }
+        }
+    }
+
+    private func deletePreset(_ preset: RulePreset) {
+        guard RulePresetManager.hasDuplicateRule(for: preset) else { return }
+
+        RulePresetManager.removePreset(preset, viewModel: viewModel) { result in
             presetMessageIsError = result.isError
-            presetMessage = result.message
+            switch result {
+            case .removedLocally(let title):
+                presetMessage = "\(title) removed from local rules."
+            case .removedAndSynced(let title):
+                presetMessage = "\(title) removed and synced to the active tunnel."
+            default:
+                presetMessage = result.message
+            }
             loadRules()
         }
     }
@@ -467,7 +545,9 @@ struct RuleEditorView: View {
     var onSave: () -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("preferredLanguage") private var preferredLanguage = "en"
     
+    @State private var title: String
     @State private var processNames: String
     @State private var targetHosts: String
     @State private var targetPorts: String
@@ -481,6 +561,7 @@ struct RuleEditorView: View {
         self.existingRule = existingRule
         self.onSave = onSave
         
+        _title = State(initialValue: existingRule?.title ?? "")
         _processNames = State(initialValue: existingRule?.processNames ?? "*")
         _targetHosts = State(initialValue: existingRule?.targetHosts ?? "*")
         _targetPorts = State(initialValue: existingRule?.targetPorts ?? "*")
@@ -492,10 +573,10 @@ struct RuleEditorView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(isEditMode ? "Edit Rule" : "Add Rule")
+                    Text(isEditMode ? localized("Edit Rule", "编辑规则") : localized("Add Rule", "添加规则"))
                         .font(.system(size: 24, weight: .semibold))
                         .foregroundStyle(AppColors.textPrimary)
-                    Text("Create an application routing policy using the same lightweight workflow as the main window.")
+                    Text(localized("Create an application routing policy using the same lightweight workflow as the main window.", "使用和主窗口一致的轻量方式创建应用分流规则。"))
                         .font(.system(size: 13))
                         .foregroundStyle(AppColors.textSecondary)
                 }
@@ -509,34 +590,41 @@ struct RuleEditorView: View {
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         editorField(
-                            label: "Bundle Identifier (Package Name)",
+                            label: localized("Title", "标题"),
+                            placeholder: localized("Rule title", "规则标题"),
+                            text: $title,
+                            hint: localized("Display name used in local configuration and exports.", "用于本地配置和导出文件中的显示名称。")
+                        )
+                        dividerInset
+                        editorField(
+                            label: localized("Bundle Identifier (Package Name)", "Bundle Identifier（包名）"),
                             placeholder: "*",
                             text: $processNames,
-                            hint: "Example: com.apple.Safari; com.google.Chrome; com.*.browser; *"
+                            hint: localized("Example: com.apple.Safari; com.google.Chrome; com.*.browser; *", "示例：com.apple.Safari；com.google.Chrome；com.*.browser；*")
                         )
                         dividerInset
                         editorField(
-                            label: "Target hosts",
+                            label: localized("Target hosts", "目标主机"),
                             placeholder: "*",
                             text: $targetHosts,
-                            hint: "Example: 127.0.0.1; 192.168.1.*; 10.0.0.1-10.0.0.254"
+                            hint: localized("Example: 127.0.0.1; 192.168.1.*; 10.0.0.1-10.0.0.254", "示例：127.0.0.1；192.168.1.*；10.0.0.1-10.0.0.254")
                         )
                         dividerInset
                         editorField(
-                            label: "Target ports",
+                            label: localized("Target ports", "目标端口"),
                             placeholder: "*",
                             text: $targetPorts,
-                            hint: "Example: 80; 8000-9000; 3128"
+                            hint: localized("Example: 80; 8000-9000; 3128", "示例：80；8000-9000；3128")
                         )
                         dividerInset
                         segmentedEditorField(
-                            label: "Protocol",
+                            label: localized("Protocol", "协议"),
                             selection: $selectedProtocol,
                             options: ["TCP", "UDP", "BOTH"]
                         )
                         dividerInset
                         segmentedEditorField(
-                            label: "Action",
+                            label: localized("Action", "动作"),
                             selection: $selectedAction,
                             options: ["PROXY", "DIRECT", "BLOCK"]
                         )
@@ -557,7 +645,7 @@ struct RuleEditorView: View {
             Divider()
 
             HStack(spacing: 10) {
-                Button("Cancel") {
+                Button(localized("Cancel", "取消")) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
@@ -565,7 +653,7 @@ struct RuleEditorView: View {
 
                 Spacer()
 
-                Button("Save Rule") {
+                Button(localized("Save Rule", "保存规则")) {
                     saveRule()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -632,12 +720,14 @@ struct RuleEditorView: View {
     }
     
     private func saveRule() {
-        guard let session = viewModel.tunnelSession else { return }
-        
-        if let existing = existingRule {
-            updateExistingRule(session: session, ruleId: existing.id)
+        if let session = viewModel.tunnelSession {
+            if let existing = existingRule {
+                updateExistingRule(session: session, ruleId: existing.id)
+            } else {
+                addNewRule(session: session)
+            }
         } else {
-            addNewRule(session: session)
+            saveRuleLocally()
         }
     }
     
@@ -652,7 +742,10 @@ struct RuleEditorView: View {
             action: selectedAction,
             enabled: true
         ) { [self] success, _ in
-            if success { dismissOnSuccess() }
+            if success {
+                persistLocalRuleTitle()
+                dismissOnSuccess()
+            }
         }
     }
     
@@ -666,8 +759,81 @@ struct RuleEditorView: View {
             action: selectedAction,
             enabled: true
         ) { [self] success, _, _ in
-            if success { dismissOnSuccess() }
+            if success {
+                persistLocalRuleTitle()
+                dismissOnSuccess()
+            }
         }
+    }
+
+    private func saveRuleLocally() {
+        var savedRules = RulePresetManager.storedRules()
+        let ruleData = localRulePayload()
+
+        if let existing = existingRule {
+            if let matchedIndex = savedRules.firstIndex(where: { matches($0, existingRule: existing) }) {
+                savedRules[matchedIndex] = ruleData
+            } else {
+                savedRules.append(ruleData)
+            }
+        } else if let matchedIndex = savedRules.firstIndex(where: { matches($0, ruleData: ruleData) }) {
+            savedRules[matchedIndex] = ruleData
+        } else {
+            savedRules.append(ruleData)
+        }
+
+        UserDefaults.standard.set(savedRules, forKey: "proxyRules")
+        dismissOnSuccess()
+    }
+
+    private func persistLocalRuleTitle() {
+        var savedRules = RulePresetManager.storedRules()
+        let ruleData = localRulePayload()
+        let matchedIndex = savedRules.firstIndex(where: { matches($0, ruleData: ruleData) })
+
+        if let matchedIndex {
+            savedRules[matchedIndex] = ruleData.merging(savedRules[matchedIndex]) { newValue, _ in newValue }
+        } else {
+            savedRules.append(ruleData)
+        }
+
+        UserDefaults.standard.set(savedRules, forKey: "proxyRules")
+    }
+
+    private func localRulePayload() -> [String: Any] {
+        [
+            "title": title.trimmingCharacters(in: .whitespacesAndNewlines),
+            "processNames": processNames,
+            "targetHosts": targetHosts,
+            "targetPorts": targetPorts,
+            "protocol": selectedProtocol,
+            "action": selectedAction,
+            "enabled": true
+        ]
+    }
+
+    private func matches(_ storedRule: [String: Any], existingRule: ProxyRule) -> Bool {
+        (storedRule["processNames"] as? String ?? "") == existingRule.processNames &&
+        (storedRule["targetHosts"] as? String ?? "") == existingRule.targetHosts &&
+        (storedRule["targetPorts"] as? String ?? "") == existingRule.targetPorts &&
+        (storedRule["protocol"] as? String ?? "").uppercased() == existingRule.ruleProtocol.uppercased() &&
+        (storedRule["action"] as? String ?? "").uppercased() == existingRule.action.uppercased()
+    }
+
+    private func matches(_ storedRule: [String: Any], ruleData: [String: Any]) -> Bool {
+        (storedRule["processNames"] as? String ?? "") == (ruleData["processNames"] as? String ?? "") &&
+        (storedRule["targetHosts"] as? String ?? "") == (ruleData["targetHosts"] as? String ?? "") &&
+        (storedRule["targetPorts"] as? String ?? "") == (ruleData["targetPorts"] as? String ?? "") &&
+        (storedRule["protocol"] as? String ?? "").uppercased() == (ruleData["protocol"] as? String ?? "").uppercased() &&
+        (storedRule["action"] as? String ?? "").uppercased() == (ruleData["action"] as? String ?? "").uppercased()
+    }
+
+    private var isChinese: Bool {
+        preferredLanguage == "zh-Hans"
+    }
+
+    private func localized(_ english: String, _ chinese: String) -> String {
+        isChinese ? chinese : english
     }
     
     private func dismissOnSuccess() {
