@@ -1,9 +1,9 @@
 using System;
 using System.Reflection;
 using System.Windows.Input;
-using ProxyBridge.GUI.Common;
+using ProxyTun.GUI.Common;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class AboutViewModel
 {

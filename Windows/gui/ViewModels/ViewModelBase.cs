@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class ViewModelBase : INotifyPropertyChanged
 {

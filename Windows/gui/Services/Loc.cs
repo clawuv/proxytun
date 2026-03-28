@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace ProxyBridge.GUI.Services;
+namespace ProxyTun.GUI.Services;
 
 public class Loc : INotifyPropertyChanged
 {
@@ -48,7 +48,7 @@ public class Loc : INotifyPropertyChanged
     public string MenuRunAtStartup => Resources.Resources.MenuRunAtStartup;
     public string MenuLanguage => Resources.Resources.MenuLanguage;
     public string MenuAbout => Resources.Resources.MenuAbout;
-    public string MenuAboutProxyBridge => Resources.Resources.MenuAboutProxyBridge;
+    public string MenuAboutProxyTun => Resources.Resources.MenuAboutProxyTun;
     public string MenuCheckUpdates => Resources.Resources.MenuCheckUpdates;
 
     // Tabs

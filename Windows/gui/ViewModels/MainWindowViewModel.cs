@@ -7,18 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using Avalonia.Controls;
-using ProxyBridge.GUI.Views;
-using ProxyBridge.GUI.Services;
-using ProxyBridge.GUI.Common;
+using ProxyTun.GUI.Views;
+using ProxyTun.GUI.Services;
+using ProxyTun.GUI.Common;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
     private const int MAX_CONNECTION_LOG_LINES = 100;
     private const int MAX_ACTIVITY_LOG_LINES = 100;
 
-    private string _title = "ProxyBridge";
+    private string _title = "ProxyTun";
     private int _selectedTabIndex;
     private string _connectionsLog = "";
     private string _activityLog = "";
@@ -33,7 +33,7 @@ public class MainWindowViewModel : ViewModelBase
     private string _newProxyAction = "PROXY";
     private bool _startWithWindows;
     private Window? _mainWindow;
-    private ProxyBridgeService? _proxyService;
+    private ProxyTunService? _proxyService;
     private bool _isServiceInitialized = false;
     private readonly SettingsService _settingsService = new SettingsService();
 
@@ -62,7 +62,7 @@ public class MainWindowViewModel : ViewModelBase
 
         try
         {
-            _proxyService = new ProxyBridgeService();
+            _proxyService = new ProxyTunService();
             _proxyService.LogReceived += (msg) =>
             {
                 lock (_activityLogLock)
@@ -155,7 +155,7 @@ public class MainWindowViewModel : ViewModelBase
             }
             else
             {
-                QueueActivityLog("ERROR: Failed to start ProxyBridge service");
+                QueueActivityLog("ERROR: Failed to start ProxyTun service");
             }
         }
         catch (Exception ex)
@@ -313,7 +313,7 @@ public class MainWindowViewModel : ViewModelBase
             {
                 if (value)
                 {
-                    ProxyBridgeService.SetTrafficLoggingEnabled(true);
+                    ProxyTunService.SetTrafficLoggingEnabled(true);
                     _connectionLogTimer?.Start();
                 }
                 else
@@ -324,7 +324,7 @@ public class MainWindowViewModel : ViewModelBase
                         _pendingConnectionLogs.Clear();
                     }
 
-                    ProxyBridgeService.SetTrafficLoggingEnabled(false);
+                    ProxyTunService.SetTrafficLoggingEnabled(false);
 
                     ConnectionsLog = null!;
                     FilteredConnectionsLog = null!;

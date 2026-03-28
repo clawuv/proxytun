@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using System.Diagnostics;
 using Avalonia.Input;
 
-namespace ProxyBridge.GUI.Views;
+namespace ProxyTun.GUI.Views;
 
 public partial class AboutWindow : Window
 {
@@ -18,7 +18,7 @@ public partial class AboutWindow : Window
 
     private void OnGitHubClick(object? sender, PointerPressedEventArgs e)
     {
-        OpenUrl("https://github.com/InterceptSuite/ProxyBridge");
+        OpenUrl("https://github.com/ProxyTun/ProxyTun");
     }
 
     private void OpenUrl(string url)

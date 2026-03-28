@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using ProxyBridge.GUI.ViewModels;
+using ProxyTun.GUI.ViewModels;
 
-namespace ProxyBridge.GUI.Views;
+namespace ProxyTun.GUI.Views;
 
 public partial class ProxySettingsWindow : Window
 {

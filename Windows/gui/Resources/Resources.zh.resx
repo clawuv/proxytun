@@ -45,8 +45,8 @@
   <data name="MenuAbout" xml:space="preserve">
     <value>关于</value>
   </data>
-  <data name="MenuAboutProxyBridge" xml:space="preserve">
-    <value>关于ProxyBridge</value>
+  <data name="MenuAboutProxyTun" xml:space="preserve">
+    <value>关于ProxyTun</value>
   </data>
   <data name="MenuCheckUpdates" xml:space="preserve">
     <value>检查更新</value>
@@ -93,13 +93,13 @@
 
   <!-- Log Messages -->
   <data name="LogInitialized" xml:space="preserve">
-    <value>ProxyBridge初始化成功</value>
+    <value>ProxyTun初始化成功</value>
   </data>
   <data name="LogServiceStarted" xml:space="preserve">
-    <value>ProxyBridge服务启动成功</value>
+    <value>ProxyTun服务启动成功</value>
   </data>
   <data name="LogServiceStartFailed" xml:space="preserve">
-    <value>错误: ProxyBridge服务启动失败</value>
+    <value>错误: ProxyTun服务启动失败</value>
   </data>
   <data name="LogRestoredProxySettings" xml:space="preserve">
     <value>已恢复代理设置</value>

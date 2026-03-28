@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace ProxyBridge.GUI.Views;
+namespace ProxyTun.GUI.Views;
 
 public partial class UpdateCheckWindow : Window
 {

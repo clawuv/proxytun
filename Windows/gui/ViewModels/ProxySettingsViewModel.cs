@@ -2,10 +2,10 @@ using System;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
-using ProxyBridge.GUI.Services;
-using ProxyBridge.GUI.Common;
+using ProxyTun.GUI.Services;
+using ProxyTun.GUI.Common;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class ProxySettingsViewModel : ViewModelBase
 {
@@ -26,7 +26,7 @@ public class ProxySettingsViewModel : ViewModelBase
     private bool _isTesting = false;
     private Action<string, string, string, string, string>? _onSave;
     private Action? _onClose;
-    private Services.ProxyBridgeService? _proxyService;
+    private Services.ProxyTunService? _proxyService;
 
     public string ProxyIp
     {
@@ -125,7 +125,7 @@ public class ProxySettingsViewModel : ViewModelBase
         return domainRegex.IsMatch(input);
     }
 
-    public ProxySettingsViewModel(string initialType, string initialIp, string initialPort, string initialUsername, string initialPassword, Action<string, string, string, string, string> onSave, Action onClose, Services.ProxyBridgeService? proxyService)
+    public ProxySettingsViewModel(string initialType, string initialIp, string initialPort, string initialUsername, string initialPassword, Action<string, string, string, string, string> onSave, Action onClose, Services.ProxyTunService? proxyService)
     {
         _onSave = onSave;
         _onClose = onClose;

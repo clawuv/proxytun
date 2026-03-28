@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace ProxyBridge.GUI.Services;
+namespace ProxyTun.GUI.Services;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(AppSettings))]
@@ -15,7 +15,7 @@ public class SettingsService
 {
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ProxyBridge",
+        "ProxyTun",
         "settings.json");
 
     public AppSettings LoadSettings()
@@ -45,7 +45,7 @@ public class SettingsService
 
     public void SetStartupWithWindows(bool enable)
     {
-        const string taskName = "ProxyBridge";
+        const string taskName = "ProxyTun";
 
         try
         {
@@ -98,7 +98,7 @@ public class SettingsService
 
     public bool IsStartupEnabled()
     {
-        const string taskName = "ProxyBridge";
+        const string taskName = "ProxyTun";
 
         try
         {

@@ -1,10 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ProxyBridge.GUI.ViewModels"
-        x:Class="ProxyBridge.GUI.Views.AboutWindow"
+        xmlns:vm="using:ProxyTun.GUI.ViewModels"
+        x:Class="ProxyTun.GUI.Views.AboutWindow"
         x:DataType="vm:AboutViewModel"
         x:CompileBindings="True"
-        Title="About ProxyBridge"
+        Title="About ProxyTun"
         Icon="/Assets/logo.ico"
         Width="500" Height="400"
         CanResize="False"
@@ -20,7 +20,7 @@
         <Border Grid.Row="0" Background="#FF252526" BorderBrush="#FF007ACC" BorderThickness="0,0,0,1" Padding="20,16">
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="ℹ" FontSize="24" Foreground="#FF007ACC" VerticalAlignment="Center"/>
-                <TextBlock Text="About ProxyBridge"
+                <TextBlock Text="About ProxyTun"
                            FontSize="18"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
@@ -29,7 +29,7 @@
 
         <!-- Content -->
         <StackPanel Grid.Row="1" Margin="32,24" Spacing="16">
-            <TextBlock Text="ProxyBridge"
+            <TextBlock Text="ProxyTun"
                        FontSize="28"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"
@@ -48,7 +48,7 @@
                        Margin="0,0,0,8"/>
 
 
-            <TextBlock Text="Author: Sourav Kalal / InterceptSuite"
+            <TextBlock Text="Author: Sourav Kalal / ProxyTun"
                        FontSize="13"
                        HorizontalAlignment="Center"
                        Foreground="#FFB0B0B0"
@@ -67,7 +67,7 @@
 
                 <TextBlock HorizontalAlignment="Center">
                     <Run Text="GitHub: " Foreground="#FFB0B0B0"/>
-                    <TextBlock Text="github.com/InterceptSuite/ProxyBridge"
+                    <TextBlock Text="github.com/ProxyTun/ProxyTun"
                                Foreground="#FF007ACC"
                                TextDecorations="Underline"
                                Cursor="Hand"

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ProxyBridge.GUI.Resources {
+namespace ProxyTun.GUI.Resources {
     using System;
 
 
@@ -35,7 +35,7 @@ namespace ProxyBridge.GUI.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ProxyBridge.GUI.Resources.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("ProxyTun.GUI.Resources.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -141,11 +141,11 @@ namespace ProxyBridge.GUI.Resources {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to About ProxyBridge.
+        ///   Looks up a localized string similar to About ProxyTun.
         /// </summary>
-        internal static string MenuAboutProxyBridge {
+        internal static string MenuAboutProxyTun {
             get {
-                return ResourceManager.GetString("MenuAboutProxyBridge", resourceCulture);
+                return ResourceManager.GetString("MenuAboutProxyTun", resourceCulture);
             }
         }
 
@@ -258,7 +258,7 @@ namespace ProxyBridge.GUI.Resources {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to ProxyBridge initialized successfully.
+        ///   Looks up a localized string similar to ProxyTun initialized successfully.
         /// </summary>
         internal static string LogInitialized {
             get {
@@ -267,7 +267,7 @@ namespace ProxyBridge.GUI.Resources {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to ProxyBridge service started successfully.
+        ///   Looks up a localized string similar to ProxyTun service started successfully.
         /// </summary>
         internal static string LogServiceStarted {
             get {
@@ -276,7 +276,7 @@ namespace ProxyBridge.GUI.Resources {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to ERROR: Failed to start ProxyBridge service.
+        ///   Looks up a localized string similar to ERROR: Failed to start ProxyTun service.
         /// </summary>
         internal static string LogServiceStartFailed {
             get {

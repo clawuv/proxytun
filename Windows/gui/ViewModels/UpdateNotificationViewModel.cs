@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using ProxyBridge.GUI.Services;
-using ProxyBridge.GUI.Common;
+using ProxyTun.GUI.Services;
+using ProxyTun.GUI.Common;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class UpdateNotificationViewModel : ViewModelBase
 {
@@ -105,7 +105,7 @@ public class UpdateNotificationViewModel : ViewModelBase
             }
 
             var tempPath = Path.GetTempPath();
-            var fileName = _versionInfo.SetupFileName ?? "ProxyBridge-Setup.exe";
+            var fileName = _versionInfo.SetupFileName ?? "ProxyTun-Setup.exe";
             var filePath = Path.Combine(tempPath, fileName);
 
             DownloadStatus = "Downloading update...";

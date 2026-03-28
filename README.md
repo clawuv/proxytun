@@ -1,13 +1,10 @@
-# ProxyBridge
+# ProxyTun
 
 <p align="center">
-  <img src="img/logo.png" alt="ProxyBridge Logo" />
+  <img src="img/logo.png" alt="ProxyTun Logo" />
 </p>
 
-ProxyBridge is a lightweight, open-source universal proxy client (Proxifier alternative) that provides transparent proxy routing for applications on **Windows**, **macOS**, and **Linux**. It redirects TCP and UDP traffic from specific processes through SOCKS5 or HTTP proxies, with the ability to route, block, or allow traffic on a per-application basis. ProxyBridge fully supports both TCP and UDP proxy routing and works at the system level, making it compatible with proxy-unaware applications without requiring any configuration changes.
-
-> [!TIP]
-> **Need advanced traffic analysis?** Check out [**InterceptSuite**](https://github.com/InterceptSuite/InterceptSuite) - our comprehensive MITM proxy for analyzing TLS, TCP, UDP, DTLS traffic. Perfect for security testing, network debugging, and system administration!
+ProxyTun is a lightweight, open-source universal proxy client (Proxifier alternative) that provides transparent proxy routing for applications on **Windows** and **macOS**, with Linux planned for a later release. It redirects TCP and UDP traffic from specific processes through SOCKS5 or HTTP proxies, with the ability to route, block, or allow traffic on a per-application basis. ProxyTun fully supports both TCP and UDP proxy routing and works at the system level, making it compatible with proxy-unaware applications without requiring any configuration changes.
 
 ## Table of Contents
 
@@ -20,16 +17,13 @@ ProxyBridge is a lightweight, open-source universal proxy client (Proxifier alte
 - [Credits](#credits)
 
 <p align="center">
-  <strong>💖 Support ProxyBridge Development</strong><br/>
-  <em>If you find ProxyBridge useful, consider sponsoring to support ongoing development and new features!</em><br/><br/>
-  <a href="https://github.com/sponsors/InterceptSuite">
-    <img src="https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86" alt="Sponsor InterceptSuite" width="230" height="50">
-  </a>
+  <strong>ProxyTun v1</strong><br/>
+  <em>Transparent per-application proxy routing for desktop apps.</em>
 </p>
 
 ## Features
 
-- **Cross-platform** - Available for Windows, macOS and Linux
+- **Cross-platform foundation** - Windows and macOS in v1, Linux planned next
 - **Dual interface** - Feature-rich GUI and powerful CLI for all use cases
 - **Process-based traffic control** - Route, block, or allow traffic for specific applications
 - **Universal compatibility** - Works with proxy-unaware applications
@@ -43,31 +37,23 @@ ProxyBridge is a lightweight, open-source universal proxy client (Proxifier alte
 - **Process exclusion** - Prevent proxy loops by excluding proxy applications
 - **Import/Export rules** - Share rule configurations across systems with JSON-based import/export
 
-> [!CAUTION]
-> **Beware of Fake ProxyBridge Downloads**
+> [!IMPORTANT]
+> Download ProxyTun from official sources only:
+> - GitHub Repository: https://github.com/ProxyTun/ProxyTun
+> - Releases: https://github.com/ProxyTun/ProxyTun/releases
 >
-> Multiple **fake ProxyBridge download sources** have been identified. Some of these sources distribute **unwanted binaries** and **malicious software**.
->
-> ❌ **Do NOT download ProxyBridge from any third-party or unofficial sources.**
->
-> ✅ **Official ProxyBridge sources (only):**
-> - GitHub Repository: https://github.com/InterceptSuite/ProxyBridge/
-> - Official Website: [https://interceptsuite.com/download/proxybridge](https://interceptsuite.com/download/proxybridge)
->
-> If you prefer not to use prebuilt binaries, you may safely build ProxyBridge yourself by following the **Contribution Guide** and compiling directly from the **official source code**.
->
-> ProxyBridge does not communicate with any external servers except the GitHub API for update checks (triggered only on app launch or manual update checks);
+> If you prefer not to use prebuilt binaries, build ProxyTun directly from the source code in this repository.
 
 
 
 ## Platform Documentation
 
-ProxyBridge is available for Windows, macOS, and Linux, with platform-specific implementations:
+ProxyTun v1 targets Windows and macOS. Linux remains in the repository as a future phase and is not part of the initial release scope.
 
 ### 📘 Windows
 - **[View Full Windows Documentation](Windows/README.md)**
 - **Technology**: WinDivert for kernel-level packet interception
-- **Installer**: Available from [Releases](https://github.com/InterceptSuite/ProxyBridge/releases)
+- **Installer**: Available from [Releases](https://github.com/ProxyTun/ProxyTun/releases)
 - **Requirements**: Windows 10 or later (64-bit), Administrator privileges
 - **GUI**: Avalonia-based modern interface
 - **CLI**: Full-featured command-line tool with rule file support
@@ -75,27 +61,23 @@ ProxyBridge is available for Windows, macOS, and Linux, with platform-specific i
 ### 📗 macOS
 - **[View Full macOS Documentation](MacOS/README.md)**
 - **Technology**: Network Extension framework with transparent proxy
-- **Distribution**: Direct download (.pkg installer) from [Releases](https://github.com/InterceptSuite/ProxyBridge/releases)
+- **Distribution**: Direct download (.pkg installer) from [Releases](https://github.com/ProxyTun/ProxyTun/releases)
 - **Requirements**: macOS 13.0 (Ventura) or later, Apple Silicon (ARM) or Intel
 - **GUI**: Native SwiftUI interface
 
 ### 📙 Linux
-- **[View Full Linux Documentation](Linux/README.md)**
-- **Technology**: Netfilter NFQUEUE for kernel-level packet interception
-- **Distribution**: TAR.GZ archive or one-command install from [Releases](https://github.com/InterceptSuite/ProxyBridge/releases)
-- **Requirements**: Linux kernel with NFQUEUE support, root privileges (not compatible with WSL1/WSL2)
-- **GUI**: GTK3-based interface (optional)
-- **CLI**: Full-featured command-line tool with rule support
-- **Quick Install**: `curl -Lo deploy.sh https://raw.githubusercontent.com/InterceptSuite/ProxyBridge/refs/heads/master/Linux/deploy.sh && sudo bash deploy.sh`
+- **Status**: Planned for phase 2
+- **Current repo state**: Legacy reference implementation remains under `Linux/`
+- **Release status**: No Linux binaries or support commitment in ProxyTun v1
 
 ## Screenshots
 
 ### macOS
 
 <p align="center">
-  <img src="img/ProxyBridge-mac.png" alt="ProxyBridge macOS Main Interface" width="800"/>
+  <img src="img/ProxyTun-mac.png" alt="ProxyTun macOS Main Interface" width="800"/>
   <br/>
-  <em>ProxyBridge GUI - Main Interface</em>
+  <em>ProxyTun GUI - Main Interface</em>
 </p>
 
 <p align="center">
@@ -121,9 +103,9 @@ ProxyBridge is available for Windows, macOS, and Linux, with platform-specific i
 #### GUI
 
 <p align="center">
-  <img src="img/ProxyBridge.png" alt="ProxyBridge Windows Main Interface" width="800"/>
+  <img src="img/ProxyTun.png" alt="ProxyTun Windows Main Interface" width="800"/>
   <br/>
-  <em>ProxyBridge GUI - Main Interface</em>
+  <em>ProxyTun GUI - Main Interface</em>
 </p>
 
 <p align="center">
@@ -147,50 +129,14 @@ ProxyBridge is available for Windows, macOS, and Linux, with platform-specific i
 #### CLI
 
 <p align="center">
-  <img src="img/ProxyBridge_CLI.png" alt="ProxyBridge CLI" width="800"/>
+  <img src="img/ProxyTun_CLI.png" alt="ProxyTun CLI" width="800"/>
   <br/>
-  <em>ProxyBridge CLI Interface</em>
-</p>
-
-### Linux
-
-#### GUI
-
-<p align="center">
-  <img src="img/ProxyBridge-linux.png" alt="ProxyBridge Linux Main Interface" width="800"/>
-  <br/>
-  <em>ProxyBridge GUI - Main Interface</em>
-</p>
-
-<p align="center">
-  <img src="img/proxy-setting-linux.png" alt="Proxy Settings Linux" width="800"/>
-  <br/>
-  <em>Proxy Settings Configuration</em>
-</p>
-
-<p align="center">
-  <img src="img/proxy-rule-linux.png" alt="Proxy Rules Linux" width="800"/>
-  <br/>
-  <em>Proxy Rules Management</em>
-</p>
-
-<p align="center">
-  <img src="img/proxy-rule2-linux.png" alt="Add/Edit Rule Linux" width="800"/>
-  <br/>
-  <em>Add/Edit Proxy Rule</em>
-</p>
-
-#### CLI
-
-<p align="center">
-  <img src="img/ProxyBridge_CLI-linux.png" alt="ProxyBridge Linux CLI" width="800"/>
-  <br/>
-  <em>ProxyBridge CLI Interface</em>
+  <em>ProxyTun CLI Interface</em>
 </p>
 
 ## Use Cases
 
-- Redirect proxy-unaware applications (games, desktop apps) through InterceptSuite/Burp Suite for security testing
+- Redirect proxy-unaware applications (games, desktop apps) through ProxyTun/Burp Suite for security testing
 - Route specific applications through Tor, SOCKS5 or HTTP proxies
 - Intercept and analyze traffic from applications that don't support proxy configuration
 - Test application behavior under different network conditions
@@ -202,7 +148,7 @@ MIT License - See LICENSE file for details
 
 ## Author
 
-Sourav Kalal / InterceptSuite
+Sourav Kalal
 
 ## Credits
 

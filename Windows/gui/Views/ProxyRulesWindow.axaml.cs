@@ -5,9 +5,9 @@ using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Interactivity;
 using Avalonia.Input;
-using ProxyBridge.GUI.ViewModels;
+using ProxyTun.GUI.ViewModels;
 
-namespace ProxyBridge.GUI.Views;
+namespace ProxyTun.GUI.Views;
 
 public class SelectAllTextConverter : IValueConverter
 {

@@ -9,8 +9,8 @@ param(
 
 $WinDivertPath = "C:\WinDivert-2.2.2-A"
 $SourcePath = "src"
-$SourceFile = "ProxyBridge.c"
-$OutputDLL = "ProxyBridgeCore.dll"
+$SourceFile = "ProxyTun.c"
+$OutputDLL = "ProxyTunCore.dll"
 $OutputDir = "output"
 
 $SignTool = "signtool.exe"
@@ -58,7 +58,7 @@ function Compile-MSVC {
     Write-Host "Found Visual Studio at: $vsPath" -ForegroundColor Cyan
 
     $clArgs = "/nologo /O2 /Ot /GL /Gy /W4 /wd4100 /wd4189 /wd4267 /wd4244 /wd4996 " +
-              "/D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS /DPROXYBRIDGE_EXPORTS /DNDEBUG " +
+              "/D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS /DPROXYTUN_EXPORTS /DNDEBUG " +
               "/arch:SSE2 /fp:fast /GS /guard:cf /Qpar " +
               "/I`"$WinDivertPath\include`" " +
               "$SourcePath\$SourceFile " +
@@ -91,7 +91,7 @@ function Compile-GCC {
 
     Write-Host "GCC found: $($gccVersion[0])" -ForegroundColor Cyan
 
-    $cmd = "gcc -shared -O2 -flto -s -Wall -D_WIN32_WINNT=0x0601 -DPROXYBRIDGE_EXPORTS " +
+    $cmd = "gcc -shared -O2 -flto -s -Wall -D_WIN32_WINNT=0x0601 -DPROXYTUN_EXPORTS " +
            "-I`"$WinDivertPath\include`" " +
            "$SourcePath\$SourceFile " +
            "-L`"$WinDivertPath\$Arch`" " +
@@ -170,7 +170,7 @@ if ($success) {
     Write-Host "`nCompilation SUCCESSFUL!" -ForegroundColor Green
 
     Write-Host "`nCleaning up intermediate files..." -ForegroundColor Yellow
-    $intermediateFiles = @("*.obj", "*.exp", "*.lib", "ProxyBridge.obj")
+    $intermediateFiles = @("*.obj", "*.exp", "*.lib", "ProxyTun.obj")
     foreach ($pattern in $intermediateFiles) {
         Get-ChildItem -Path . -Filter $pattern -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item $_.FullName -Force
@@ -195,7 +195,7 @@ if ($success) {
     }
 
     Write-Host "`nPublishing GUI..." -ForegroundColor Green
-    $publishResult = dotnet publish gui/ProxyBridge.GUI.csproj -c Release -r win-x64 --self-contained `
+    $publishResult = dotnet publish gui/ProxyTun.GUI.csproj -c Release -r win-x64 --self-contained `
         /p:PublishTrimmed=true `
         /p:PublishSingleFile=false `
         /p:EnableCompressionInSingleFile=true `
@@ -212,8 +212,8 @@ if ($success) {
         Write-Host "`nCopying GUI files to output..." -ForegroundColor Green
         $guiPublishPath = "gui\bin\Release\net10.0-windows\win-x64\publish"
 
-        Copy-Item "$guiPublishPath\ProxyBridge.exe" -Destination $OutputDir -Force
-        Write-Host "  Copied: ProxyBridge.exe" -ForegroundColor Gray
+        Copy-Item "$guiPublishPath\ProxyTun.exe" -Destination $OutputDir -Force
+        Write-Host "  Copied: ProxyTun.exe" -ForegroundColor Gray
 
         Get-ChildItem "$guiPublishPath\*.dll" | ForEach-Object {
             Copy-Item $_.FullName -Destination $OutputDir -Force
@@ -229,7 +229,7 @@ if ($success) {
     }
 
     Write-Host "`nPublishing CLI..." -ForegroundColor Green
-    $publishResult = dotnet publish cli/ProxyBridge.CLI.csproj -c Release -r win-x64 --self-contained `
+    $publishResult = dotnet publish cli/ProxyTun.CLI.csproj -c Release -r win-x64 --self-contained `
         /p:PublishTrimmed=true `
         /p:PublishSingleFile=true `
         /p:EnableCompressionInSingleFile=true `
@@ -246,8 +246,8 @@ if ($success) {
         Write-Host "`nCopying CLI files to output..." -ForegroundColor Green
         $cliPublishPath = "cli\bin\Release\net10.0-windows\win-x64\publish"
 
-        Copy-Item "$cliPublishPath\ProxyBridge_CLI.exe" -Destination $OutputDir -Force
-        Write-Host "  Copied: ProxyBridge_CLI.exe" -ForegroundColor Gray
+        Copy-Item "$cliPublishPath\ProxyTun_CLI.exe" -Destination $OutputDir -Force
+        Write-Host "  Copied: ProxyTun_CLI.exe" -ForegroundColor Gray
 
         Write-Host "`nCleaning up CLI build artifacts..." -ForegroundColor Yellow
         Remove-Item "cli\bin" -Recurse -Force -ErrorAction SilentlyContinue
@@ -292,11 +292,11 @@ if ($success) {
     $nsisPath = "C:\Program Files (x86)\NSIS\Bin\makensis.exe"
     if (Test-Path $nsisPath) {
         Push-Location installer
-        $result = & $nsisPath "ProxyBridge.nsi" 2>&1
+        $result = & $nsisPath "ProxyTun.nsi" 2>&1
         Pop-Location
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  Installer created successfully" -ForegroundColor Green
-            $installerName = "ProxyBridge-Setup-3.2.0.exe"
+            $installerName = "ProxyTun-Setup-3.2.0.exe"
             if (Test-Path "installer\$installerName") {
                 Move-Item "installer\$installerName" -Destination $OutputDir -Force
                 Write-Host "  Moved: $installerName -> $OutputDir\" -ForegroundColor Gray

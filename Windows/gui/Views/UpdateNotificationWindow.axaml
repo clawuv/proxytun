@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ProxyBridge.GUI.ViewModels"
-        x:Class="ProxyBridge.GUI.Views.UpdateNotificationWindow"
+        xmlns:vm="using:ProxyTun.GUI.ViewModels"
+        x:Class="ProxyTun.GUI.Views.UpdateNotificationWindow"
         x:DataType="vm:UpdateNotificationViewModel"
         x:CompileBindings="True"
         Title="Update Available"
@@ -50,7 +50,7 @@
             </StackPanel>
 
             <!-- Update Message -->
-            <TextBlock Text="A new version of ProxyBridge is available. Would you like to download and install it now?"
+            <TextBlock Text="A new version of ProxyTun is available. Would you like to download and install it now?"
                        TextWrapping="Wrap"
                        HorizontalAlignment="Center"
                        Foreground="#FFB0B0B0"

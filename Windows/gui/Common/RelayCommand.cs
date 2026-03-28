@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-namespace ProxyBridge.GUI.Common;
+namespace ProxyTun.GUI.Common;
 
 public class RelayCommand : ICommand
 {

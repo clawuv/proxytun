@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:ProxyBridge.GUI.ViewModels"
-        xmlns:services="using:ProxyBridge.GUI.Services"
+        xmlns:vm="using:ProxyTun.GUI.ViewModels"
+        xmlns:services="using:ProxyTun.GUI.Services"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="650"
-        x:Class="ProxyBridge.GUI.Views.MainWindow"
+        x:Class="ProxyTun.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:CompileBindings="True"
         Title="{Binding Title}"
@@ -191,7 +191,7 @@
             <!-- Title Bar (Custom) -->
             <Border DockPanel.Dock="Top" Background="#FF2D2D30" Height="32" IsHitTestVisible="False">
                 <Grid>
-                    <TextBlock Text="ProxyBridge"
+                    <TextBlock Text="ProxyTun"
                                Foreground="#FFE0E0E0"
                                FontSize="12"
                                VerticalAlignment="Center"
@@ -262,7 +262,7 @@
                     </MenuItem>
                 </MenuItem>
                 <MenuItem Header="{Binding Loc.MenuAbout}">
-                    <MenuItem Header="{Binding Loc.MenuAboutProxyBridge}" Command="{Binding ShowAboutCommand}"/>
+                    <MenuItem Header="{Binding Loc.MenuAboutProxyTun}" Command="{Binding ShowAboutCommand}"/>
                     <MenuItem Header="{Binding Loc.MenuCheckUpdates}" Command="{Binding CheckForUpdatesCommand}"/>
                 </MenuItem>
             </Menu>

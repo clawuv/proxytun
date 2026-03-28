@@ -3,7 +3,7 @@ using System.Security.Principal;
 using System.Runtime.Versioning;
 using System.Text.Json.Serialization;
 
-namespace ProxyBridge.CLI;
+namespace ProxyTun.CLI;
 
 public class ProxyRuleImport
 {
@@ -24,24 +24,24 @@ public partial class ProxyRuleJsonContext : JsonSerializerContext
 
 static class ParsingHelpers
 {
-    public static ProxyBridgeNative.RuleProtocol ParseProtocol(string protocolStr)
+    public static ProxyTunNative.RuleProtocol ParseProtocol(string protocolStr)
     {
         return protocolStr.ToUpper() switch
         {
-            "TCP" => ProxyBridgeNative.RuleProtocol.TCP,
-            "UDP" => ProxyBridgeNative.RuleProtocol.UDP,
-            "BOTH" => ProxyBridgeNative.RuleProtocol.BOTH,
+            "TCP" => ProxyTunNative.RuleProtocol.TCP,
+            "UDP" => ProxyTunNative.RuleProtocol.UDP,
+            "BOTH" => ProxyTunNative.RuleProtocol.BOTH,
             _ => throw new ArgumentException($"Invalid protocol: {protocolStr}. Use TCP, UDP, or BOTH")
         };
     }
 
-    public static ProxyBridgeNative.RuleAction ParseAction(string actionStr)
+    public static ProxyTunNative.RuleAction ParseAction(string actionStr)
     {
         return actionStr.ToUpper() switch
         {
-            "PROXY" => ProxyBridgeNative.RuleAction.PROXY,
-            "DIRECT" => ProxyBridgeNative.RuleAction.DIRECT,
-            "BLOCK" => ProxyBridgeNative.RuleAction.BLOCK,
+            "PROXY" => ProxyTunNative.RuleAction.PROXY,
+            "DIRECT" => ProxyTunNative.RuleAction.DIRECT,
+            "BLOCK" => ProxyTunNative.RuleAction.BLOCK,
             _ => throw new ArgumentException($"Invalid action: {actionStr}. Use PROXY, DIRECT, or BLOCK")
         };
     }
@@ -54,8 +54,8 @@ static class ParsingHelpers
 
 class Program
 {
-    private static ProxyBridgeNative.LogCallback? _logCallback;
-    private static ProxyBridgeNative.ConnectionCallback? _connectionCallback;
+    private static ProxyTunNative.LogCallback? _logCallback;
+    private static ProxyTunNative.ConnectionCallback? _connectionCallback;
     private static bool _isRunning = false;
     private static int _verboseLevel = 0;
 
@@ -124,7 +124,7 @@ class Program
 
         var updateCommand = new Command("--update", "Check for updates and download latest version from GitHub");
 
-        var rootCommand = new RootCommand("ProxyBridge - Universal proxy client for Windows applications")
+        var rootCommand = new RootCommand("ProxyTun - Universal proxy client for Windows applications")
         {
             proxyOption,
             ruleOption,
@@ -143,7 +143,7 @@ class Program
 
         rootCommand.SetHandler(async (proxyUrl, rules, ruleFile, dnsViaProxy, localhostViaProxy, verbose) =>
         {
-            await RunProxyBridge(proxyUrl, rules, ruleFile, dnsViaProxy, localhostViaProxy, verbose);
+            await RunProxyTun(proxyUrl, rules, ruleFile, dnsViaProxy, localhostViaProxy, verbose);
         }, proxyOption, ruleOption, ruleFileOption, dnsViaProxyOption, localhostViaProxyOption, verboseOption);
 
         if (args.Contains("--help") || args.Contains("-h") || args.Contains("-?"))
@@ -154,7 +154,7 @@ class Program
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task<int> RunProxyBridge(string proxyUrl, string[] rules, string? ruleFile, bool dnsViaProxy, bool localhostViaProxy, int verboseLevel)
+    private static async Task<int> RunProxyTun(string proxyUrl, string[] rules, string? ruleFile, bool dnsViaProxy, bool localhostViaProxy, int verboseLevel)
     {
         _verboseLevel = verboseLevel;
         ShowBanner();
@@ -162,7 +162,7 @@ class Program
         if (!IsRunningAsAdministrator())
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("\nERROR: ProxyBridge requires Administrator privileges!");
+            Console.WriteLine("\nERROR: ProxyTun requires Administrator privileges!");
             Console.ResetColor();
             Console.WriteLine("Please run this application as Administrator.\n");
             return 1;
@@ -188,18 +188,18 @@ class Program
             if (_verboseLevel == 1 || _verboseLevel == 3)
             {
                 _logCallback = OnLog;
-                ProxyBridgeNative.ProxyBridge_SetLogCallback(_logCallback);
+                ProxyTunNative.ProxyTun_SetLogCallback(_logCallback);
             }
 
             if (_verboseLevel == 2 || _verboseLevel == 3)
             {
                 _connectionCallback = OnConnection;
-                ProxyBridgeNative.ProxyBridge_SetConnectionCallback(_connectionCallback);
+                ProxyTunNative.ProxyTun_SetConnectionCallback(_connectionCallback);
             }
 
             // Disable traffic logging if no callbacks registered (prevents memory leak)
             bool enableTrafficLogging = _verboseLevel > 0;
-            ProxyBridgeNative.ProxyBridge_SetTrafficLoggingEnabled(enableTrafficLogging);
+            ProxyTunNative.ProxyTun_SetTrafficLoggingEnabled(enableTrafficLogging);
 
             Console.WriteLine($"Proxy: {proxyInfo.Type}://{proxyInfo.Host}:{proxyInfo.Port}");
             if (!string.IsNullOrEmpty(proxyInfo.Username))
@@ -209,7 +209,7 @@ class Program
             Console.WriteLine($"DNS via Proxy: {(dnsViaProxy ? "Enabled" : "Disabled")}");
             Console.WriteLine($"Localhost via Proxy: {(localhostViaProxy ? "Enabled" : "Disabled (Security: most proxies block localhost)")}");
 
-            if (!ProxyBridgeNative.ProxyBridge_SetProxyConfig(
+            if (!ProxyTunNative.ProxyTun_SetProxyConfig(
                 proxyInfo.Type,
                 proxyInfo.Host,
                 proxyInfo.Port,
@@ -220,15 +220,15 @@ class Program
                 return 1;
             }
 
-            ProxyBridgeNative.ProxyBridge_SetDnsViaProxy(dnsViaProxy);
-            ProxyBridgeNative.ProxyBridge_SetLocalhostViaProxy(localhostViaProxy);
+            ProxyTunNative.ProxyTun_SetDnsViaProxy(dnsViaProxy);
+            ProxyTunNative.ProxyTun_SetLocalhostViaProxy(localhostViaProxy);
 
             if (parsedRules.Count > 0)
             {
                 Console.WriteLine($"Rules: {parsedRules.Count}");
                 foreach (var rule in parsedRules)
                 {
-                    var ruleId = ProxyBridgeNative.ProxyBridge_AddRule(
+                    var ruleId = ProxyTunNative.ProxyTun_AddRule(
                         rule.ProcessName,
                         rule.TargetHosts,
                         rule.TargetPorts,
@@ -246,25 +246,25 @@ class Program
                 }
             }
 
-            if (!ProxyBridgeNative.ProxyBridge_Start())
+            if (!ProxyTunNative.ProxyTun_Start())
             {
-                Console.WriteLine("ERROR: Failed to start ProxyBridge");
+                Console.WriteLine("ERROR: Failed to start ProxyTun");
                 return 1;
             }
 
             _isRunning = true;
-            Console.WriteLine("\nProxyBridge started. Press Ctrl+C to stop...\n");
+            Console.WriteLine("\nProxyTun started. Press Ctrl+C to stop...\n");
 
             Console.CancelKeyPress += (sender, e) =>
             {
                 e.Cancel = true;
-                Console.WriteLine("\n\nStopping ProxyBridge...");
+                Console.WriteLine("\n\nStopping ProxyTun...");
                 if (_isRunning)
                 {
-                    ProxyBridgeNative.ProxyBridge_Stop();
+                    ProxyTunNative.ProxyTun_Stop();
                     _isRunning = false;
                 }
-                Console.WriteLine("ProxyBridge stopped.");
+                Console.WriteLine("ProxyTun stopped.");
             };
 
             while (_isRunning)
@@ -300,9 +300,9 @@ class Program
         }
     }
 
-    private static async Task<List<(string ProcessName, string TargetHosts, string TargetPorts, ProxyBridgeNative.RuleProtocol Protocol, ProxyBridgeNative.RuleAction Action)>> LoadRulesFromFile(string filePath)
+    private static async Task<List<(string ProcessName, string TargetHosts, string TargetPorts, ProxyTunNative.RuleProtocol Protocol, ProxyTunNative.RuleAction Action)>> LoadRulesFromFile(string filePath)
     {
-        var rules = new List<(string, string, string, ProxyBridgeNative.RuleProtocol, ProxyBridgeNative.RuleAction)>();
+        var rules = new List<(string, string, string, ProxyTunNative.RuleProtocol, ProxyTunNative.RuleAction)>();
 
         if (!File.Exists(filePath))
         {
@@ -346,7 +346,7 @@ class Program
         }
     }
 
-    private static (ProxyBridgeNative.ProxyType Type, string Host, ushort Port, string? Username, string? Password) ParseProxyConfig(string proxyUrl)
+    private static (ProxyTunNative.ProxyType Type, string Host, ushort Port, string? Username, string? Password) ParseProxyConfig(string proxyUrl)
     {
         string? username = null;
         string? password = null;
@@ -361,7 +361,7 @@ class Program
                     username = parts[2];
                     password = parts[3];
                 }
-                return (ProxyBridgeNative.ProxyType.SOCKS5, parts[0], port, username, password);
+                return (ProxyTunNative.ProxyType.SOCKS5, parts[0], port, username, password);
             }
         }
         else if (proxyUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
@@ -374,16 +374,16 @@ class Program
                     username = parts[2];
                     password = parts[3];
                 }
-                return (ProxyBridgeNative.ProxyType.HTTP, parts[0], port, username, password);
+                return (ProxyTunNative.ProxyType.HTTP, parts[0], port, username, password);
             }
         }
 
         throw new ArgumentException($"Invalid proxy format: {proxyUrl}\nUse type://host:port or type://host:port:username:password");
     }
 
-    private static List<(string ProcessName, string TargetHosts, string TargetPorts, ProxyBridgeNative.RuleProtocol Protocol, ProxyBridgeNative.RuleAction Action)> ParseRules(string[] rules)
+    private static List<(string ProcessName, string TargetHosts, string TargetPorts, ProxyTunNative.RuleProtocol Protocol, ProxyTunNative.RuleAction Action)> ParseRules(string[] rules)
     {
-        var parsedRules = new List<(string, string, string, ProxyBridgeNative.RuleProtocol, ProxyBridgeNative.RuleAction)>(rules.Length);
+        var parsedRules = new List<(string, string, string, ProxyTunNative.RuleProtocol, ProxyTunNative.RuleAction)>(rules.Length);
 
         foreach (var rule in rules)
         {
@@ -434,8 +434,8 @@ class Program
         Console.WriteLine();
         Console.WriteLine("  Universal proxy client for Windows applications");
         Console.WriteLine();
-        Console.WriteLine("\tAuthor: Sourav Kalal/InterceptSuite");
-        Console.WriteLine("\tGitHub: https://github.com/InterceptSuite/ProxyBridge");
+        Console.WriteLine("\tAuthor: Sourav Kalal/ProxyTun");
+        Console.WriteLine("\tGitHub: https://github.com/ProxyTun/ProxyTun");
         Console.WriteLine();
     }
 
@@ -448,13 +448,13 @@ class Program
         var currentVersion = System.Reflection.Assembly.GetExecutingAssembly()
             .GetName().Version?.ToString(3) ?? "0.0.0";
 
-        const string repoOwner = "InterceptSuite";
-        const string repoName = "ProxyBridge";
+        const string repoOwner = "ProxyTun";
+        const string repoName = "ProxyTun";
 
         try
         {
             using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "ProxyBridge-CLI");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "ProxyTun-CLI");
 
             var apiUrl = $"https://api.github.com/repos/{repoOwner}/{repoName}/releases/latest";
             var response = await httpClient.GetStringAsync(apiUrl);

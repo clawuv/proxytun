@@ -2,13 +2,13 @@ using Avalonia;
 using System;
 using System.Threading;
 
-namespace ProxyBridge.GUI;
+namespace ProxyTun.GUI;
 
 class Program
 {
     private static Mutex? _instanceMutex;
-    private const string MutexName = "Global\\ProxyBridge_SingleInstance_Mutex_v3.1";
-    private const string EventName = "Global\\ProxyBridge_ShowWindow_Event_v3.1";
+    private const string MutexName = "Global\\ProxyTun_SingleInstance_Mutex_v1";
+    private const string EventName = "Global\\ProxyTun_ShowWindow_Event_v1";
 
     [STAThread]
     public static void Main(string[] args)

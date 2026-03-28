@@ -2,20 +2,20 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Controls;
-using ProxyBridge.GUI.ViewModels;
-using ProxyBridge.GUI.Views;
+using ProxyTun.GUI.ViewModels;
+using ProxyTun.GUI.Views;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ProxyBridge.GUI;
+namespace ProxyTun.GUI;
 
 public class App : Application
 {
     public static bool StartMinimized { get; set; }
     private EventWaitHandle? _showWindowEvent;
     private CancellationTokenSource? _eventListenerCts;
-    private const string EventName = "Global\\ProxyBridge_ShowWindow_Event_v3.1";
+    private const string EventName = "Global\\ProxyTun_ShowWindow_Event_v1";
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 

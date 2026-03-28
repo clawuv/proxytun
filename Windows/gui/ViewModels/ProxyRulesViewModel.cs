@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
 using Avalonia.Controls;
-using ProxyBridge.GUI.Services;
-using ProxyBridge.GUI.Common;
+using ProxyTun.GUI.Services;
+using ProxyTun.GUI.Common;
 
-namespace ProxyBridge.GUI.ViewModels;
+namespace ProxyTun.GUI.ViewModels;
 
 public class ProxyRulesViewModel : ViewModelBase
 {
@@ -26,7 +26,7 @@ public class ProxyRulesViewModel : ViewModelBase
     private Action<ProxyRule>? _onAddRule;
     private Action? _onClose;
     private Action? _onConfigChanged;
-    private ProxyBridgeService? _proxyService;
+    private ProxyTunService? _proxyService;
     private Window? _window;
 
     public ObservableCollection<ProxyRule> ProxyRules { get; }
@@ -115,7 +115,7 @@ public class ProxyRulesViewModel : ViewModelBase
         ProcessNameError = "";
     }
 
-    public ProxyRulesViewModel(ObservableCollection<ProxyRule> proxyRules, Action<ProxyRule> onAddRule, Action onClose, ProxyBridgeService? proxyService = null, Action? onConfigChanged = null)
+    public ProxyRulesViewModel(ObservableCollection<ProxyRule> proxyRules, Action<ProxyRule> onAddRule, Action onClose, ProxyTunService? proxyService = null, Action? onConfigChanged = null)
     {
         ProxyRules = proxyRules;
         _onAddRule = onAddRule;
@@ -448,7 +448,7 @@ public class ProxyRulesViewModel : ViewModelBase
         var saveDialog = new Avalonia.Platform.Storage.FilePickerSaveOptions
         {
             Title = "Export Proxy Rules",
-            SuggestedFileName = "ProxyBridge-Rules.json",
+            SuggestedFileName = "ProxyTun-Rules.json",
             FileTypeChoices = new[]
             {
                 new Avalonia.Platform.Storage.FilePickerFileType("JSON Files")

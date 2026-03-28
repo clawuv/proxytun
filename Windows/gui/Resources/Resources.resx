@@ -47,8 +47,8 @@
   <data name="MenuAbout" xml:space="preserve">
     <value>About</value>
   </data>
-  <data name="MenuAboutProxyBridge" xml:space="preserve">
-    <value>About ProxyBridge</value>
+  <data name="MenuAboutProxyTun" xml:space="preserve">
+    <value>About ProxyTun</value>
   </data>
   <data name="MenuCheckUpdates" xml:space="preserve">
     <value>Check for Updates</value>
@@ -95,10 +95,10 @@
 
   <!-- Log Messages -->
   <data name="LogServiceStarted" xml:space="preserve">
-    <value>ProxyBridge service started successfully</value>
+    <value>ProxyTun service started successfully</value>
   </data>
   <data name="LogServiceStartFailed" xml:space="preserve">
-    <value>ERROR: Failed to start ProxyBridge service</value>
+    <value>ERROR: Failed to start ProxyTun service</value>
   </data>
   <data name="LogRestoredProxySettings" xml:space="preserve">
     <value>Restored proxy settings</value>

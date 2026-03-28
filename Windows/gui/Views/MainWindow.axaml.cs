@@ -1,10 +1,10 @@
 using Avalonia.Controls;
-using ProxyBridge.GUI.ViewModels;
+using ProxyTun.GUI.ViewModels;
 using System;
 using System.ComponentModel;
 using Avalonia.Interactivity;
 
-namespace ProxyBridge.GUI.Views;
+namespace ProxyTun.GUI.Views;
 
 public partial class MainWindow : Window
 {

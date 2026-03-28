@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ProxyBridge.GUI.ViewModels;
+using ProxyTun.GUI.ViewModels;
 
-namespace ProxyBridge.GUI.Services;
+namespace ProxyTun.GUI.Services;
 
 public class AppConfig
 {
@@ -93,7 +93,7 @@ public static class ConfigManager
 {
     private static readonly string ConfigDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ProxyBridge"
+        "ProxyTun"
     );
 
     private static readonly string ConfigFilePath = Path.Combine(ConfigDirectory, "config.json");

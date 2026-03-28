@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Linq;
 
-namespace ProxyBridge.GUI.Services;
+namespace ProxyTun.GUI.Services;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(GitHubRelease))]
@@ -20,12 +20,12 @@ internal partial class SourceGenerationContext : JsonSerializerContext
 public class UpdateService
 {
     private readonly HttpClient _httpClient;
-    private const string GitHubApiUrl = "https://api.github.com/repos/InterceptSuite/ProxyBridge/releases/latest";
+    private const string GitHubApiUrl = "https://api.github.com/repos/ProxyTun/ProxyTun/releases/latest";
 
     public UpdateService()
     {
         _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "ProxyBridge-UpdateChecker");
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "ProxyTun-UpdateChecker");
     }
 
     public async Task<VersionInfo> CheckForUpdatesAsync()
@@ -43,7 +43,7 @@ public class UpdateService
                 a.Name?.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true &&
                 (a.Name.Contains("setup", StringComparison.OrdinalIgnoreCase) ||
                  a.Name.Contains("installer", StringComparison.OrdinalIgnoreCase) ||
-                 a.Name.Contains("ProxyBridge", StringComparison.OrdinalIgnoreCase)));
+                 a.Name.Contains("ProxyTun", StringComparison.OrdinalIgnoreCase)));
 
             // Only mark update as available if:
             // 1. Version is newer AND
