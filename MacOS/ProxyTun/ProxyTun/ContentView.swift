@@ -1200,7 +1200,7 @@ struct ContentView: View {
     }
 
     private func openProjectHomepage() {
-        guard let url = URL(string: "https://github.com/ProxyTun/ProxyTun") else { return }
+        guard let url = URL(string: "https://github.com/clawuv/proxytun") else { return }
         NSWorkspace.shared.open(url)
     }
 

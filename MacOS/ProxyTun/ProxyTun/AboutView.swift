@@ -28,7 +28,7 @@ struct AboutView: View {
                 HStack {
                     Text("GitHub:")
                         .foregroundColor(.secondary)
-                    Link("github.com/ProxyTun/ProxyTun", destination: URL(string: "https://github.com/ProxyTun/ProxyTun")!)
+                    Link("github.com/clawuv/proxytun", destination: URL(string: "https://github.com/clawuv/proxytun")!)
                         .foregroundColor(.accentColor)
                 }
             }

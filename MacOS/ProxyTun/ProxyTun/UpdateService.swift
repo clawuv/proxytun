@@ -45,7 +45,7 @@ struct VersionInfo {
 }
 
 class UpdateService {
-    private let githubApiUrl = "https://api.github.com/repos/ProxyTun/ProxyTun/releases/latest"
+    private let githubApiUrl = "https://api.github.com/repos/clawuv/proxytun/releases/latest"
     private let releaseDateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
