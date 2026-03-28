@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION="3.2.0"
+VERSION="3.2.1"
 
 if [ -f "$SCRIPT_DIR/.env" ]; then
     source "$SCRIPT_DIR/.env"
@@ -26,7 +26,7 @@ echo "Creating installer package..."
 pkgbuild \
     --root build/component \
     --identifier com.proxytun.ProxyTun \
-    --version 3.2.0 \
+    --version 3.2.1 \
     --install-location /Applications \
     build/temp.pkg
 
@@ -45,7 +45,7 @@ cat > build/distribution.xml << 'EOF'
     <choice id="com.proxytun.ProxyTun" visible="false">
         <pkg-ref id="com.proxytun.ProxyTun"/>
     </choice>
-    <pkg-ref id="com.proxytun.ProxyTun" version="3.2.0" onConclusion="none">temp.pkg</pkg-ref>
+    <pkg-ref id="com.proxytun.ProxyTun" version="3.2.1" onConclusion="none">temp.pkg</pkg-ref>
 </installer-gui-script>
 EOF
 
